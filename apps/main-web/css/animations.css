@@ -1,0 +1,86 @@
+
+
+@keyframes blob{
+  from{transform:translate(-10%,-10%) scale(1)}
+  to{transform:translate(15%,5%) scale(1.15)}
+}
+
+
+
+@keyframes flipPage{
+  0%{transform:rotateY(0deg)}
+  40%{transform:rotateY(-160deg)}
+  60%{transform:rotateY(-160deg)}
+  100%{transform:rotateY(0deg)}
+}
+
+
+
+@keyframes cloudFloat{
+  0%{transform:translateX(-12px)}
+  50%{transform:translateX(12px)}
+  100%{transform:translateX(-12px)}
+}
+
+
+
+@keyframes cloudFloat2{
+  0%{transform:translateX(10px)}
+  50%{transform:translateX(-10px)}
+  100%{transform:translateX(10px)}
+}
+
+
+
+@keyframes welcomeFade{
+  from{opacity:0}
+  to{opacity:1}
+}
+
+
+
+@keyframes welcomeRise{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:none}
+}
+
+
+
+@keyframes barDance{
+  from{height:8px}
+  to{height:var(--h)}
+}
+
+
+
+@keyframes scShimmer{
+  to{transform:translateX(100%)}
+}
+
+
+
+@keyframes formExpand{
+  from{opacity:0;max-height:0;transform:translateY(-10px)}
+  to{opacity:1;max-height:400px;transform:translateY(0)}
+}
+
+
+
+@keyframes cardFadeIn{
+  from{opacity:0;transform:translateY(10px)}
+  to{opacity:1;transform:none}
+}
+
+
+
+@keyframes todoEnter{
+  from{opacity:0;transform:translateY(4px)}
+  to{opacity:1;transform:none}
+}
+
+
+
+@keyframes noteAppear{
+  from{opacity:0;transform:scale(.8) rotate(-5deg)}
+  to{opacity:1;transform:scale(1) rotate(0)}
+}

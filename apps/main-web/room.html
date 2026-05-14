@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Midnight Room — Multiplayer</title>
+  <base href="/">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌙</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <!-- Homepage CSS — full reuse -->
+  <link rel="stylesheet" href="/css/main.css?v=20260511">
+  <link rel="stylesheet" href="/css/ui.css?v=20260511">
+  <link rel="stylesheet" href="/css/player.css?v=2026051201">
+  <link rel="stylesheet" href="/css/animations.css?v=20260511">
+  <link rel="stylesheet" href="/css/responsive.css?v=20260511">
+  <!-- Room additions only -->
+  <link rel="stylesheet" href="/css/room-page.css?v=2026051217">
+  <link rel="stylesheet" href="/css/transition.css?v=20260512_5">
+</head>
+<body>
+
+  <!-- Background (identical to homepage) -->
+  <div id="bg"></div>
+  <canvas id="stars"></canvas>
+  <canvas id="rain"></canvas>
+  <canvas id="bubbles"></canvas>
+  <canvas id="leaves"></canvas>
+  <canvas id="meteors"></canvas>
+  <div id="sleep-decor"><div class="moon"></div><div class="cloud cloud1"></div><div class="cloud cloud2"></div></div>
+  <div id="study-decor"></div>
+
+  <div id="app" class="visible">
+
+    <!-- ── TOPBAR (identical structure to homepage) ── -->
+    <div id="topbar">
+      <div class="brand">
+        <span id="room-name-display" class="room-name-text">midnight room</span>
+        <span class="room-meta-badge" id="room-id-display"></span>
+        <span class="room-listeners-badge">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          <span id="member-count-num">1</span> listening
+        </span>
+      </div>
+      <div class="topbar-right">
+        <!-- Member list button -->
+        <button class="icon-btn" id="member-list-btn" aria-label="Danh sách thành viên" title="Danh sách thành viên">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+            <circle cx="9" cy="7" r="4"/>
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
+            <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+          </svg>
+        </button>
+        <button class="icon-btn" id="toggle-mood-btn" aria-label="Đổi mood">🎭</button>
+        <!-- Close room — host only, hidden until joined-room confirms isHost -->
+        <button class="icon-btn room-close-btn" id="close-room-btn" aria-label="Đóng phòng" title="Đóng phòng (chỉ host)" style="display:none">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+        </button>
+        <button class="icon-btn room-leave-btn" id="leave-btn" aria-label="Rời phòng">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── CENTER: 2-column layout ── -->
+    <div id="center" class="room-layout">
+      <div class="room-scroll-wrap">
+
+      <!-- LEFT: Video + Reactions -->
+      <div class="room-left">
+        <div class="video-stage-wrap">
+          <div class="video-container" id="main-player-container">
+            <div id="youtube-player"></div>
+            <div class="youtube-overlay" id="youtube-overlay">
+              <div class="unlock-center">
+                <button class="unlock-audio-btn" onclick="toggleMute()">Click để bật âm thanh</button>
+              </div>
+            </div>
+            <button class="yt-quality-btn" id="yt-quality-btn" title="Cài đặt YouTube">⚙</button>
+            <div class="video-mood-glow"></div>
+          </div>
+        </div>
+        <div class="reactions-row" id="reactions-bar">
+          <button class="react-btn" data-emoji="🔥">🔥</button>
+          <button class="react-btn" data-emoji="💖">💖</button>
+          <button class="react-btn" data-emoji="✨">✨</button>
+          <button class="react-btn" data-emoji="🌙">🌙</button>
+          <button class="react-btn" data-emoji="🎵">🎵</button>
+        </div>
+      </div>
+
+      <!-- RIGHT: Panel — 3 tabs: Search / Playlist / Chat -->
+      <div class="room-right">
+        <div class="playlist-panel">
+
+          <!-- Tab header: 3 tabs -->
+          <div class="playlist-panel-header">
+            <button class="plist-tab active" data-tab="search">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+              Tìm
+            </button>
+            <button class="plist-tab" data-tab="playlist">
+              Playlist <span id="queue-count">(0)</span>
+            </button>
+            <button class="plist-tab" data-tab="chat">Chat</button>
+          </div>
+
+          <!-- Tab body: absolute stacking — no layout jump on switch -->
+          <div class="plist-tab-body">
+
+            <!-- ── TAB: SEARCH ── -->
+            <div class="plist-content active" id="plist-content-search">
+
+              <!-- Search input row -->
+              <div class="plist-search-wrap">
+                <div class="plist-search-row">
+                  <input id="yt-search-input" type="text" placeholder="Tìm video hoặc dán link YouTube...">
+                  <button class="plist-action-btn" id="yt-search-btn" aria-label="Tim kiem" title="Tìm kiếm">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                  </button>
+                  <button class="plist-action-btn" id="yt-refresh-btn" aria-label="Lam moi" title="10 kết quả khác" style="display:none">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+                  </button>
+                </div>
+              </div>
+
+              <!-- Mood chips (quick search shortcuts) -->
+              <div class="plist-chips">
+                <span class="plist-chip active" data-query="lofi chill">✨ Lofi</span>
+                <span class="plist-chip" data-query="v-pop 2024">V-Pop</span>
+                <span class="plist-chip" data-query="study music">Study</span>
+                <span class="plist-chip" data-query="jazz cafe">Jazz</span>
+                <span class="plist-chip" data-query="kpop 2024">K-Pop</span>
+              </div>
+
+              <!-- Search results scroll area -->
+              <div class="plist-track-list custom-scroll" id="search-results-list">
+                <div class="plist-empty">
+                  Nhập từ khóa và ấn Enter hoặc 🔍 để tìm
+                </div>
+              </div>
+
+            </div>
+
+            <!-- ── TAB: PLAYLIST ── -->
+            <div class="plist-content" id="plist-content-playlist">
+
+              <!-- Now Playing bar — shown reactively when a song is active -->
+              <div class="now-playing-bar" id="now-playing-bar" style="display:none">
+                <div class="npb-label">
+                  <span class="npb-eq"><span></span><span></span><span></span><span></span></span>
+                  NOW PLAYING
+                </div>
+                <div class="npb-track">
+                  <img class="npb-thumb" id="npb-thumb" src="" alt="">
+                  <div class="npb-info">
+                    <div class="npb-title" id="npb-title">—</div>
+                    <div class="npb-artist" id="npb-artist">—</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="plist-track-list custom-scroll" id="shared-queue">
+                <div class="plist-empty">Chưa có bài nào — tìm trong tab Tìm để thêm!</div>
+              </div>
+            </div>
+
+            <!-- ── TAB: CHAT ── -->
+            <div class="plist-content" id="plist-content-chat">
+              <div class="plist-messages custom-scroll" id="room-messages"></div>
+              <div class="plist-chat-input">
+                <input id="chat-input" type="text" placeholder="Nhắn gì đó...">
+                <button id="send-msg-btn">
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                </button>
+              </div>
+            </div>
+
+          </div><!-- /.plist-tab-body -->
+
+        </div>
+      </div>
+
+      </div><!-- /.room-scroll-wrap -->
+    </div>
+
+
+    <!-- ── PLAYER DOCK — Homepage structure, 100% identical ── -->
+    <div id="bottom">
+      <div id="player">
+
+        <!-- track-info: add thumbnail support -->
+        <div class="track-info">
+          <img id="dock-thumb" src="" alt="" class="room-dock-thumb">
+          <div>
+            <div class="song-title" id="song-title">Đang chờ âm nhạc...</div>
+            <div class="song-mood"  id="song-mood">Thêm link để bắt đầu</div>
+          </div>
+        </div>
+
+        <!-- progress-wrap: identical to homepage -->
+        <div class="progress-wrap">
+          <input type="range" id="music-progress" min="0" max="100" step="0.01" value="0">
+          <div class="time-row">
+            <span id="current-time">0:00</span>
+            <span id="duration-time">0:00</span>
+          </div>
+        </div>
+
+        <!-- player-controls: identical class names to homepage -->
+        <div class="player-controls">
+          <button class="ctrl-btn prev" id="prev-btn" aria-label="Previous">⏮</button>
+          <button class="ctrl-btn play" id="play-btn" aria-label="Play/Pause">▶</button>
+          <button class="ctrl-btn next" id="next-btn" aria-label="Next">⏭</button>
+          <button class="ctrl-btn volume" id="volume-btn" aria-label="Volume"></button>
+          <button class="ctrl-btn minimize" id="player-toggle" aria-label="Minimize player"></button>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /#app -->
+
+  <!-- Transparent click-catcher (no visual, just closes panel on outside click) -->
+  <div id="panel-catcher" aria-hidden="true"></div>
+
+  <!-- Mood panel (side panel — Không gian phòng) -->
+  <div class="side-panel" id="mood-panel">
+    <div class="panel-header">
+      <div class="panel-title">Không gian phòng</div>
+      <button class="panel-close" id="mood-panel-close" aria-label="Đóng">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="panel-body">
+      <button class="mood-sync-btn small-btn" data-mood="sad">🌧 Sad</button>
+      <button class="mood-sync-btn small-btn" data-mood="happy">☀ Happy</button>
+      <button class="mood-sync-btn small-btn" data-mood="chill">🌙 Chill</button>
+      <button class="mood-sync-btn small-btn" data-mood="sleep">✨ Sleep</button>
+      <button class="mood-sync-btn small-btn" data-mood="study">📚 Study</button>
+    </div>
+  </div>
+
+  <!-- Member panel — shares side-panel system with mood panel -->
+  <div class="side-panel" id="member-panel" role="dialog" aria-label="Danh sách thành viên" aria-modal="true">
+    <div class="panel-header">
+      <div class="panel-title">Trong phòng</div>
+      <button class="panel-close" id="member-panel-close" aria-label="Đóng">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <div class="panel-body">
+      <div class="member-list custom-scroll" id="member-list">
+        <div class="member-empty">Đang kết nối...</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sync Overlay for mobile autoplay block -->
+  <div id="sync-overlay" class="hidden">
+    <button id="sync-play-btn">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      Tap to sync playback
+    </button>
+  </div>
+
+  <div id="notif"></div>
+
+  <!-- ── Confirmation Modal ── -->
+  <div id="confirm-backdrop" role="dialog" aria-modal="true" aria-labelledby="confirm-title">
+    <div id="confirm-modal">
+      <div class="confirm-icon" id="confirm-icon"></div>
+      <h2 class="confirm-title" id="confirm-title"></h2>
+      <p class="confirm-desc" id="confirm-desc"></p>
+      <div class="confirm-actions">
+        <button class="confirm-btn cancel" id="confirm-cancel">Hủy</button>
+        <button class="confirm-btn danger" id="confirm-confirm">Đóng phòng</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <script src="https://www.youtube.com/iframe_api"></script>
+  <script src="/js/config.js?v=20260511"></script>
+  <script src="/js/utils.js?v=20260511"></script>
+  <script src="/js/visualizer.js?v=20260511"></script>
+  <script src="/js/mood-manager.js?v=20260511"></script>
+  <script src="/js/transition.js?v=20260512_4"></script>
+  <script src="/js/room-page.js?v=2026051218"></script>
+  <script>console.log('[Room] Config loaded:', window.CONFIG);</script>
+</body>
+</html>

@@ -1,0 +1,695 @@
+
+@media(max-width:768px){
+  .sticky-note.size-s{
+    width:120px;
+    height:120px;
+    padding:22px 10px 10px;
+  }
+
+  .sticky-note.size-m{
+    width:150px;
+    height:150px;
+    padding:26px 12px 12px;
+  }
+
+  .sticky-note.size-l{
+    width:180px;
+    height:180px;
+    padding:30px 14px 14px;
+  }
+
+  .sticky-note-text{
+    font-size:.75rem;
+    padding-top:20px;
+  }
+
+  .sticky-note-controls{
+    top:4px;
+    right:4px;
+    gap:3px;
+  }
+
+  .sticky-ctrl-btn{
+    width:8px;
+    height:8px;
+    min-width:8px;
+    min-height:8px;
+    max-width:8px;
+    max-height:8px;
+  }
+
+  .todo-form-section{
+    padding:.75rem;
+  }
+
+  .todo-form-row{
+    grid-template-columns:1fr 1fr;
+    gap:.4rem;
+  }
+
+  .todo-form-row-actions{
+    grid-template-columns:1fr 1fr;
+    gap:.4rem;
+  }
+
+  .todo-note-toggle{
+    padding:.5rem .6rem;
+    font-size:.75rem;
+  }
+
+  .todo-add-btn{
+    padding:.5rem .6rem;
+    font-size:.75rem;
+  }
+}
+
+
+
+@media(max-width:768px){
+  html,body{
+    width:100%;
+    max-width:100%;
+  }
+
+  #bg::before{
+    width:82vw;
+    height:82vw;
+    filter:blur(78px);
+    opacity:.14;
+    animation-duration:24s;
+  }
+
+  #welcome{
+    justify-content:flex-start;
+    gap:1.1rem;
+    padding:2.2rem 1rem 1.4rem;
+    overflow:auto;
+  }
+
+  .welcome-branding{
+    top:clamp(18px,3.2vh,28px);
+    left:0;
+    right:0;
+    width:100%;
+    transform:none;
+    padding-inline:1rem;
+  }
+
+  #ictu-signature{
+    margin-top:clamp(10px,2vh,14px);
+  }
+
+  .ictu-sub{
+    font-size:.78rem;
+    max-width:22rem;
+  }
+
+  #welcome-hero{
+    padding-top:clamp(118px,16vh,148px);
+  }
+
+  .welcome-title{
+    font-size:clamp(2rem,10vw,2.7rem);
+  }
+
+  .welcome-sub{
+    font-size:.95rem;
+    max-width:22rem;
+  }
+
+  .mood-grid{
+    display:grid;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:.75rem;
+  }
+
+  .mood-btn{
+    width:100%;
+    min-width:0;
+    min-height:56px;
+    padding:.9rem .8rem;
+    border-radius:16px;
+    font-size:.95rem;
+  }
+
+  #app{
+    grid-template-rows:auto minmax(0,1fr) auto;
+  }
+
+  #soundcloud-stage{
+    width:calc(100vw - 1rem);
+    bottom:calc(18px + env(safe-area-inset-bottom, 0px));
+    border-radius:16px;
+    padding:12px;
+  }
+
+  .sc-stage-head{
+    gap:10px;
+    padding:0;
+    margin-bottom:10px;
+  }
+
+  .sc-stage-head > div{
+    flex: 1;
+    min-width: 0;
+  }
+
+  .sc-embed-wrap iframe{
+    height:110px;
+    min-height:110px;
+    border-radius:12px;
+  }
+
+  #sc-stage-exit{
+    min-width:58px;
+    min-height:28px;
+    padding:6px 14px;
+    font-size:.76rem;
+    border-radius:12px;
+    flex-shrink:0;
+  }
+
+  #sc-stage-thumb{
+    width:32px;
+    height:32px;
+    border-radius:10px;
+  }
+
+  #sc-stage-title,
+  #sc-stage-sub{
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  body.soundcloud-mode{
+    --dock-reserve: calc(var(--visualizer-h) + 175px + 26px);
+  }
+
+  #topbar{
+    padding:.75rem .85rem;
+    gap:.7rem;
+    align-items:flex-start;
+  }
+
+  .brand{
+    font-size:1rem;
+    max-width:42vw;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .topbar-right{
+    gap:.45rem;
+    max-width:52vw;
+  }
+
+  .icon-btn{
+    width:46px;
+    height:46px;
+    border-radius:14px;
+    font-size:1.05rem;
+  }
+
+  #center{
+    justify-content:flex-start;
+    padding:5.8rem .95rem calc(8.5rem + var(--dock-reserve));
+    gap:clamp(14px,2vh,18px);
+    overflow:auto;
+    -webkit-overflow-scrolling:touch;
+  }
+
+  body.soundcloud-mode{
+    --dock-reserve: calc(var(--visualizer-h) + 195px + 26px);
+  }
+
+  body.soundcloud-mode #center{
+    transform:translateY(-10px);
+  }
+
+  #live-clock{
+    font-size:clamp(2.7rem,14vw,4.4rem);
+    letter-spacing:.035em;
+  }
+
+  #mood-chip{
+    margin:0;
+    font-size:.9rem;
+  }
+
+  #quote-wrap{
+    margin-top:.2rem;
+  }
+
+  #quote-en{
+    font-size:clamp(1.15rem,6vw,1.55rem);
+  }
+
+  #quote-vi{
+    margin-top:.65rem;
+    font-size:.95rem;
+  }
+
+  #focus-ring-wrap{
+    margin-top:clamp(22px,5vh,30px);
+  }
+
+  #focus-time{
+    font-size:clamp(3.5rem,10vw,4.5rem);
+  }
+
+
+
+  #bottom{
+    padding:.65rem;
+    padding-bottom:calc(.65rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  #player{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:center;
+    gap:.72rem .8rem;
+    padding:.82rem;
+    border-radius:26px;
+    width:100%;
+  }
+
+  .track-info{
+    width:auto;
+    flex:none;
+    min-width:0;
+  }
+
+  .progress-wrap{
+    grid-column:1 / -1;
+    width:100%;
+    min-width:0;
+    margin:0;
+  }
+
+  .player-controls{
+    width:auto;
+    justify-content:flex-end;
+    gap:.5rem;
+  }
+
+  .ctrl-btn{
+    flex:none;
+    width:48px;
+    height:48px;
+    border-radius:16px;
+  }
+
+  #weather-badge{
+    top:.6rem;
+    padding:.45rem .7rem;
+    gap:8px;
+  }
+
+  #wx-icon{
+    font-size:1.05rem;
+  }
+
+  #wx-temp{
+    font-size:1.2rem;
+  }
+
+  #wx-condition{
+    font-size:.78rem;
+  }
+
+  #weather-details{
+    gap:8px;
+  }
+
+  .wx-detail{
+    font-size:.78rem;
+  }
+
+  #weather-location{
+    font-size:.72rem;
+  }
+
+  #visualizer{
+    height:78px;
+    gap:1px;
+  }
+
+  .bar{
+    min-width:3px;
+    box-shadow:0 0 10px var(--mood-glow);
+  }
+
+  .side-panel, #room-panel {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    padding: 1rem;
+    border-left: none;
+  }
+
+  .panel-close{
+    min-width:44px;
+    min-height:44px;
+    border-radius:12px;
+    background:rgba(255,255,255,.08);
+  }
+
+  .book-wrap{
+    transform:translateY(16px) scale(.72);
+    opacity:.25;
+  }
+
+  .moon{
+    width:76px;
+    height:76px;
+    top:11%;
+    right:6%;
+  }
+
+  .moon::after{
+    width:62px;
+    height:62px;
+    left:13px;
+  }
+
+  .cloud1{
+    width:122px;
+    height:38px;
+    left:5%;
+  }
+
+  .cloud2{
+    width:106px;
+    height:34px;
+    right:8%;
+  }
+}
+
+
+
+@media(max-width:480px){
+  #topbar{
+    padding:.65rem .7rem;
+  }
+
+  .brand{
+    font-size:.92rem;
+    max-width:36vw;
+  }
+
+  .topbar-right{
+    gap:.35rem;
+    max-width:60vw;
+  }
+
+  .icon-btn{
+    width:42px;
+    height:42px;
+    min-height:42px;
+    border-radius:13px;
+    font-size:1rem;
+  }
+
+  #weather-badge{
+    top:.5rem;
+    max-width:calc(100vw - 1rem);
+    padding:.4rem .6rem;
+    gap:6px;
+  }
+
+  #weather-main{
+    gap:.35rem;
+  }
+
+  #wx-icon{
+    font-size:1rem;
+  }
+
+  #wx-temp{
+    font-size:1.1rem;
+  }
+
+  #wx-condition{
+    font-size:.72rem;
+    opacity:.88;
+  }
+
+  #weather-details{
+    display:none;
+  }
+
+  #weather-location{
+    font-size:.7rem;
+    max-width:70px;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  #center{
+    padding:5.25rem .75rem 8rem;
+  }
+
+  #live-clock{
+    font-size:clamp(2.35rem,15vw,3.55rem);
+  }
+
+  #quote-en{
+    font-size:clamp(1rem,5.8vw,1.35rem);
+  }
+
+  #quote-vi{
+    font-size:.88rem;
+  }
+
+  .mood-grid{
+    grid-template-columns:1fr;
+    width:min(100%,320px);
+  }
+
+  .mood-btn{
+    min-height:52px;
+  }
+
+  #bottom{
+    padding:.5rem;
+    padding-bottom:calc(.5rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  #player{
+    padding:.68rem;
+    border-radius:24px;
+    gap:.6rem .55rem;
+  }
+
+  .song-title{
+    font-size:.92rem;
+  }
+
+  .song-mood{
+    font-size:.76rem;
+  }
+
+  .time-row{
+    font-size:.7rem;
+    margin-top:.42rem;
+  }
+
+  .ctrl-btn{
+    width:48px;
+    height:48px;
+    min-width:48px;
+    min-height:48px;
+    border-radius:14px;
+    font-size:.82rem;
+  }
+
+  #notif{
+    width:calc(100vw - 1.5rem);
+    bottom:1rem;
+    border-radius:18px;
+    text-align:center;
+  }
+}
+
+
+
+@media(max-width:380px){
+  #player{
+    grid-template-columns:1fr;
+  }
+
+  .player-controls{
+    width:100%;
+    justify-content:space-between;
+  }
+
+  .track-info,
+  .progress-wrap{
+    grid-column:1 / -1;
+  }
+}
+
+
+
+@media(min-width:769px) and (max-width:1024px){
+  #topbar{
+    padding:1rem 1.2rem;
+  }
+
+  .icon-btn{
+    width:52px;
+    height:52px;
+    border-radius:17px;
+  }
+
+  #center{
+    padding:2rem 1.4rem 8rem;
+  }
+
+  #live-clock{
+    font-size:clamp(4.4rem,10vw,6.5rem);
+  }
+
+  #quote-en{
+    font-size:clamp(1.45rem,3.5vw,2rem);
+  }
+
+  #player{
+    border-radius:24px;
+  }
+}
+
+
+
+@media(max-height:640px) and (max-width:768px){
+  #welcome{
+    padding-top:5rem;
+    gap:.75rem;
+  }
+
+  #welcome img{
+    width:52px !important;
+    height:52px !important;
+  }
+
+  .welcome-title{
+    font-size:1.8rem;
+  }
+
+  #center{
+    padding-top:4.6rem;
+    padding-bottom:7rem;
+  }
+
+  #quote-wrap{
+    margin-top:.8rem;
+  }
+
+  #bottom{
+    padding:.4rem;
+  }
+
+  #player{
+    gap:.5rem .55rem;
+    padding:.58rem;
+  }
+
+  #visualizer{
+    height:56px;
+  }
+
+  .todo-form-section{
+    padding:.9rem;
+  }
+
+  .todo-form-row{
+    grid-template-columns:1fr 1fr;
+    gap:.4rem;
+  }
+
+  .todo-date-input,
+  .todo-time-input{
+    min-width:unset;
+    padding:.55rem .6rem;
+    font-size:.78rem;
+  }
+
+  .todo-form-row-actions{
+    grid-template-columns:1fr 1fr;
+    gap:.4rem;
+  }
+
+  .todo-note-toggle{
+    padding:.5rem .6rem;
+    font-size:.75rem;
+  }
+
+  .todo-add-btn{
+    padding:.5rem .6rem;
+    font-size:.75rem;
+  }
+
+  .sticky-manager-search input{
+    font-size:.82rem;
+  }
+}
+
+
+
+@media(pointer:coarse){
+  .mood-btn:hover,
+  #player-toggle:hover,
+  #player:hover,
+  .ctrl-btn:hover{
+    transform:none;
+  }
+
+  .ctrl-btn:active,
+  #player-toggle:active{
+    transform:scale(.96);
+  }
+}
+
+
+
+@media(prefers-reduced-motion:reduce){
+  *,
+  *::before,
+  *::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.001ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+@media(max-width:768px){
+  #weather-badge{
+    top: 5rem !important;
+    max-width: 40% !important;
+    padding: 0.35rem 0.5rem !important;
+    gap: 4px !important;
+  }
+  #weather-details, #weather-location {
+    display: none !important;
+  }
+}
+
+@media(max-width:768px){
+  #wx-condition {
+    display: none !important;
+  }
+}
+
+/* =========================================
+   ADAPTIVE BOTTOM PLAYER (DESKTOP)
+   ========================================= */
+@media(min-width: 1024px) {
+  body.sidebar-open #bottom {
+    padding-right: calc(360px + 1rem);
+  }
+  
+  body.sidebar-open #bottom.hidden-player {
+    padding-right: calc(360px + 1rem);
+  }
+}

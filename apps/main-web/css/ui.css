@@ -1,0 +1,348 @@
+/* ==========================================================================
+   UI TOKENS & SHARED SYSTEM
+   ========================================================================== */
+
+/* --- Tokens --- */
+:root {
+  /* Spacing */
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+
+  /* Border Radius */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+
+  /* Transitions */
+  --trans-fast: 0.15s ease;
+  --trans-normal: 0.25s ease;
+  --trans-slow: 0.5s ease;
+
+  /* Shadows */
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.15);
+  --shadow-md: 0 4px 15px rgba(0,0,0,0.2);
+  --shadow-lg: 0 8px 30px rgba(0,0,0,0.25);
+  
+  /* Glass Effects */
+  --glass-bg: rgba(255, 255, 255, 0.1);
+  --glass-bg-hover: rgba(255, 255, 255, 0.15);
+  --glass-border: rgba(255, 255, 255, 0.16);
+  --glass-blur: blur(16px);
+}
+
+/* ==========================================================================
+   SHARED UTILITY CLASSES
+   ========================================================================== */
+
+/* --- Glass Panels --- */
+.glass-panel {
+  background: var(--panel-surface, var(--glass-bg));
+  border: 1px solid var(--panel-border, var(--glass-border));
+  border-radius: var(--radius-lg);
+  backdrop-filter: var(--glass-blur);
+  -webkit-backdrop-filter: var(--glass-blur);
+  box-shadow: var(--shadow-md);
+}
+
+/* --- Shared Buttons --- */
+.mood-button {
+  border: none;
+  border-radius: var(--radius-lg);
+  background: rgba(15, 20, 40, 0.82);
+  border: 1px solid var(--glass-border);
+  color: #ffffff;
+  cursor: pointer;
+  font-weight: 700;
+  text-shadow: 0 0 12px rgba(0,0,0,0.35);
+  box-shadow: var(--shadow-lg);
+  backdrop-filter: var(--glass-blur);
+  transition: transform var(--trans-normal), background var(--trans-normal), border-color var(--trans-normal);
+  line-height: 1.2;
+}
+
+.mood-button:hover {
+  transform: translateY(-3px) scale(1.03);
+  background: rgba(25, 35, 70, 0.95);
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.icon-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-lg);
+  background: var(--glass-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--panel-title, #ffffff);
+  cursor: pointer;
+  backdrop-filter: var(--glass-blur);
+  transition: background var(--trans-fast), transform var(--trans-fast);
+}
+
+.icon-button:hover {
+  background: var(--glass-bg-hover);
+  transform: scale(1.05);
+}
+
+/* --- Typography --- */
+.section-title {
+  font-family: 'Poppins', sans-serif;
+  font-weight: 700;
+  color: var(--panel-title, #ffffff);
+  margin-bottom: var(--space-md);
+  letter-spacing: 0.02em;
+}
+
+/* --- Cards --- */
+.mood-card {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  transition: background var(--trans-fast);
+}
+
+.mood-card:hover {
+  background: var(--glass-bg);
+}
+
+/* --- Custom Scrollbar --- */
+@media (hover: hover) and (pointer: fine) {
+  .custom-scroll::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+  .custom-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scroll::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 10px;
+  }
+  .custom-scroll:hover::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.16);
+  }
+  .custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.28);
+  }
+}
+
+/* ==========================================================================
+   LOCAL MUSIC LIBRARY PANEL
+   ========================================================================== */
+
+#library-panel {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.library-toolbar {
+  padding: 1rem;
+  border-bottom: 1px solid var(--glass-border);
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  flex-shrink: 0;
+}
+
+.library-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+#library-search {
+  width: 100%;
+  background: var(--panel-surface-2);
+  border: 1px solid var(--panel-border);
+  border-radius: 12px;
+  padding: 0.8rem 1rem;
+  color: var(--panel-text);
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  line-height: 1.5;
+}
+
+#library-search::placeholder {
+  color: var(--panel-placeholder);
+  opacity: 0.7;
+}
+
+#library-search:focus {
+  outline: none;
+  border-color: var(--mood-accent);
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 15px var(--mood-glow);
+}
+
+.library-filter {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.2rem;
+}
+
+.library-filter::-webkit-scrollbar {
+  display: none;
+}
+
+.library-filter-btn {
+  /* Default to neutral/all */
+  --mood-rgb: 229, 231, 235;
+  --mood-hex: #e5e7eb;
+
+  background: rgba(var(--mood-rgb), 0.08);
+  border: 1px solid rgba(var(--mood-rgb), 0.15);
+  color: rgba(var(--mood-rgb), 0.85);
+  padding: 0.35rem 0.9rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.library-filter-btn:hover {
+  background: rgba(var(--mood-rgb), 0.15);
+  border-color: rgba(var(--mood-rgb), 0.3);
+  color: #fff;
+  box-shadow: 0 0 8px rgba(var(--mood-rgb), 0.2);
+}
+
+.library-filter-btn.active {
+  background: rgba(var(--mood-rgb), 0.25);
+  border-color: var(--mood-hex);
+  color: #fff;
+  box-shadow: 0 0 15px rgba(var(--mood-rgb), 0.4);
+}
+
+/* Chill */
+.library-filter-btn[data-filter="chill"] {
+  --mood-rgb: 165, 180, 252;
+  --mood-hex: #a5b4fc;
+}
+
+/* Happy */
+.library-filter-btn[data-filter="happy"] {
+  --mood-rgb: 253, 224, 71;
+  --mood-hex: #fde047;
+}
+
+/* Sad */
+.library-filter-btn[data-filter="sad"] {
+  --mood-rgb: 147, 197, 253;
+  --mood-hex: #93c5fd;
+}
+
+/* Sleep */
+.library-filter-btn[data-filter="sleep"] {
+  --mood-rgb: 216, 180, 254;
+  --mood-hex: #d8b4fe;
+}
+
+/* All / Others */
+.library-filter-btn[data-filter="all"],
+.library-filter-btn[data-filter="others"] {
+  --mood-rgb: 229, 231, 235;
+  --mood-hex: #e5e7eb;
+}
+
+.library-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.library-track-item {
+  display: flex;
+  align-items: center;
+  padding: 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+  position: relative;
+}
+
+.library-track-item:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.library-track-item.active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.library-track-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 60%;
+  width: 3px;
+  background: #4ade80;
+  border-radius: 0 4px 4px 0;
+}
+
+.library-track-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 0.8rem;
+  flex-shrink: 0;
+  font-size: 1.2rem;
+}
+
+.library-track-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.library-track-title {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 0.1rem;
+}
+
+.library-track-artist {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.library-track-mood {
+  font-size: 0.7rem;
+  padding: 0.1rem 0.4rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 4px;
+  color: rgba(255, 255, 255, 0.8);
+  margin-left: 0.5rem;
+  text-transform: capitalize;
+}
+
+.library-empty {
+  padding: 2rem;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 0.9rem;
+}

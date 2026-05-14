@@ -1,0 +1,1687 @@
+/* ============================================================
+   room-page.css — Integrated Search Edition
+   Bổ sung layout 2-column + playlist panel + player thumbnail.
+   KHÔNG override homepage player styles.
+   ============================================================ */
+
+/* App luôn hiện */
+#app { opacity: 1 !important; pointer-events: auto !important; }
+
+/* Close Room button — host only, danger accent */
+.room-close-btn {
+  display: none; /* shown via JS for host only */
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 120, 120, .75) !important;
+  border-color: rgba(255, 100, 100, .2) !important;
+  transition: color .2s, background .2s, border-color .2s;
+}
+.room-close-btn:hover {
+  color: #ff8080 !important;
+  background: rgba(255, 80, 80, .12) !important;
+  border-color: rgba(255, 80, 80, .35) !important;
+}
+
+/* ── GLOBAL: Remove all browser default focus styles in room panel ── */
+.playlist-panel input:focus,
+.playlist-panel input:focus-visible,
+.playlist-panel button:focus,
+.playlist-panel button:focus-visible,
+.plist-action-btn:focus,
+.plist-action-btn:focus-visible,
+.yt-add-btn:focus,
+.yt-add-btn:focus-visible {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
+/* ── Toast notification: glassmorphism, above player dock ── */
+#notif {
+  bottom: calc(110px + env(safe-area-inset-bottom, 12px)) !important;
+  border: 1px solid rgba(255,255,255,.14);
+  font-size: .82rem;
+  font-weight: 500;
+  color: rgba(255,255,255,.92);
+  white-space: nowrap;
+  max-width: 80vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  /* Override main.css transition for snappier feel */
+  transition: opacity .22s ease, transform .22s ease !important;
+  transform: translateX(-50%) translateY(6px);
+}
+#notif.show {
+  opacity: 1 !important;
+  transform: translateX(-50%) translateY(0) !important;
+}
+
+/* Toast types — tinted border + background */
+#notif.toast-success {
+  border-color: rgba(80,210,120,.35);
+  background: rgba(20,60,35,.7) !important;
+}
+#notif.toast-warning {
+  border-color: rgba(255,180,50,.35);
+  background: rgba(60,40,10,.7) !important;
+}
+#notif.toast-info {
+  border-color: rgba(255,255,255,.14);
+  background: rgba(255,255,255,.1) !important;
+}
+
+/* ── Topbar branding extras ── */
+.room-name-text {
+  display: inline-block;
+  max-width: 250px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  vertical-align: middle;
+  transition: opacity 0.3s ease;
+}
+.room-meta-badge {
+  font-size: .55rem; font-weight: 500; letter-spacing: .1em;
+  opacity: .38; margin-left: .5rem; text-transform: uppercase; vertical-align: middle;
+}
+.room-listeners-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  font-size: .76rem; font-weight: 500; opacity: .5;
+  margin-left: .9rem; vertical-align: middle;
+}
+.room-leave-btn { color: rgba(255,100,100,.7) !important; }
+.room-leave-btn:hover {
+  background: rgba(255,70,70,.12) !important;
+  border-color: rgba(255,70,70,.22) !important;
+  color: #ff6464 !important;
+}
+
+/* ============================================================
+   2-COLUMN LAYOUT
+   ============================================================ */
+.room-layout {
+  flex-direction: row !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+  padding: 10px 20px 6px !important;
+  gap: 18px !important;
+  /* Desktop: hidden overflow keeps 2-column tight within grid row */
+  overflow: hidden !important;
+}
+
+/* Desktop: scroll-wrap is transparent — just passes flex layout through */
+.room-scroll-wrap {
+  display: contents; /* acts as if it doesn't exist in the layout tree */
+}
+
+/* ── LEFT: Video + Reactions ── */
+.room-left {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.video-stage-wrap { width: 100%; max-width: 860px; }
+
+.video-container {
+  position: relative; width: 100%; aspect-ratio: 16/9;
+  border-radius: 20px;
+  /* NOTE: overflow must NOT be hidden here — it clips YouTube's settings menu popup */
+  background: #000;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.06),
+    0 28px 70px rgba(0,0,0,.65),
+    0 0 50px var(--mood-glow, rgba(156,183,255,.1));
+  transition: box-shadow 1.8s ease;
+}
+/* Clip border-radius visually without clipping YouTube popups */
+.video-container::before {
+  content: ''; position: absolute; inset: 0;
+  border-radius: 20px; overflow: hidden;
+  pointer-events: none;
+}
+.video-container iframe,
+#youtube-player {
+  position: absolute; inset: 0; width: 100%; height: 100%; border: none;
+  border-radius: 20px; /* keep visual rounding on the iframe itself */
+  z-index: 0; /* sits below mood-glow z-index:1 — but pointer-events:none on glow so clicks pass through */
+  /* Explicit: block all clicks to iframe — overlay handles interaction */
+  pointer-events: none;
+}
+#youtube-player iframe {
+  border-radius: 20px;
+}
+.video-mood-glow {
+  position: absolute; inset: 0; pointer-events: none; z-index: 1;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,.3) 100%);
+  border-radius: 20px;
+  /* pointer-events:none ensures all clicks pass through to YouTube iframe */
+}
+
+/* Overlay to block YouTube iframe interactions - always active */
+.youtube-overlay {
+  position: absolute; inset: 0; z-index: 20;
+  background: transparent;
+  pointer-events: auto;
+}
+
+/* YouTube quality/settings button — perfect circle, top-right of player */
+#yt-quality-btn {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 26;
+
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  max-width: 34px;
+  max-height: 34px;
+
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+  line-height: 1;
+  aspect-ratio: 1 / 1;
+  box-sizing: border-box;
+  flex-shrink: 0;
+
+  border: none;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.15s, color 0.15s, transform 0.12s, opacity 0.2s;
+  pointer-events: auto;
+  overflow: hidden;
+
+  /* Override any global button reset */
+  margin: 0;
+  outline: none;
+}
+#yt-quality-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  transform: scale(1.1);
+}
+#yt-quality-btn:active {
+  transform: scale(0.95);
+}
+/* Hide button while interaction mode is active */
+body.yt-iframe-mode #yt-quality-btn {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* When iframe interaction mode is ON: overlay stops blocking, iframe receives clicks */
+body.yt-iframe-mode .youtube-overlay {
+  pointer-events: none;
+}
+body.yt-iframe-mode #youtube-player {
+  pointer-events: auto !important;
+}
+
+/* Container for unlock button - doesn't capture clicks */
+.unlock-center {
+  position: absolute; inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+/* Unlock audio button - only this is clickable */
+.unlock-audio-btn {
+  pointer-events: auto;
+  border: none;
+  border-radius: 999px;
+  padding: 12px 20px;
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(10px);
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+/* Reactions */
+.reactions-row { display: flex; gap: 10px; align-items: center; }
+.react-btn {
+  width: 44px; height: 44px; min-height: unset; border: none;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+  border-radius: 13px; font-size: 1.15rem; cursor: pointer;
+  backdrop-filter: blur(12px); transition: transform .2s, background .2s;
+  display: flex; align-items: center; justify-content: center;
+}
+.react-btn:hover { transform: translateY(-4px) scale(1.12); background: rgba(255,255,255,.14); }
+
+/* ── RIGHT: Playlist Panel ── */
+.room-right {
+  width: clamp(250px, 26vw, 315px);
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.playlist-panel {
+  flex: 1; display: flex; flex-direction: column;
+  border-radius: 20px;
+  background: rgba(8,10,24,.52);
+  border: 1px solid rgba(255,255,255,.1);
+  backdrop-filter: blur(28px) saturate(150%);
+  box-shadow: 0 16px 48px rgba(0,0,0,.38);
+  /* Fixed height: prevents panel resize on tab switch */
+  height: 100%;
+  overflow: hidden; min-height: 0;
+}
+
+/* Tabs — 3-tab layout */
+.playlist-panel-header {
+  display: flex; align-items: stretch; gap: 0;
+  padding: 10px 12px 0; border-bottom: 1px solid rgba(255,255,255,.07);
+  flex-shrink: 0;
+}
+.plist-tab {
+  flex: 1;
+  background: none; border: none; cursor: pointer; min-height: unset;
+  font-size: .72rem; font-weight: 700; letter-spacing: .04em;
+  text-transform: uppercase; color: rgba(255,255,255,.32);
+  padding: 7px 6px 9px;
+  border-bottom: 2px solid transparent;
+  transition: color .2s, border-color .2s;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  white-space: nowrap;
+}
+.plist-tab svg { opacity: .7; flex-shrink: 0; }
+.plist-tab.active { color: rgba(255,255,255,.9); border-bottom-color: var(--mood-accent, #9cb7ff); }
+.plist-tab.active svg { opacity: 1; }
+.plist-tab:hover:not(.active) { color: rgba(255,255,255,.55); }
+
+/* Unread chat notification */
+.plist-tab.unread {
+  color: #fff;
+  text-shadow: 0 0 8px var(--mood-glow, rgba(255,255,255,.5));
+  animation: tabPulse 2s infinite ease-in-out;
+}
+.plist-tab.unread::after {
+  content: '';
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--mood-accent, #fff);
+  box-shadow: 0 0 8px var(--mood-glow, rgba(255,255,255,.5));
+  margin-left: 2px;
+}
+@keyframes tabPulse {
+  0%   { border-bottom-color: transparent; }
+  50%  { border-bottom-color: color-mix(in srgb, var(--mood-accent, #fff) 60%, transparent); }
+  100% { border-bottom-color: transparent; }
+}
+
+/* Content area: absolute stacking — NO height change on tab switch */
+.plist-tab-body {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.plist-content {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  pointer-events: none;
+  /* Instant switch — no transition to avoid any flicker */
+  visibility: hidden;
+}
+.plist-content.active {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+}
+
+/* ── Search tab layout: fixed top (wrap+chips), scroll bottom (results) ── */
+#plist-content-search {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden; /* clip — scroll handled by #search-results-list */
+}
+
+/* Search row — minimal focus, no glow/blur/shadow/overlay */
+.plist-search-wrap {
+  position: relative;
+  padding: 10px 12px 0;
+  flex-shrink: 0;
+}
+.plist-search-row {
+  display: flex; align-items: center; gap: 6px;
+  padding: 7px 10px; border-radius: 12px;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.08);
+  transition: border-color .18s;
+  /* Explicitly NO box-shadow, NO backdrop-filter on the row itself */
+}
+.plist-search-row:focus-within {
+  border-color: rgba(255,255,255,.22);
+  /* Nothing else — no background, no glow, no scale, no blur */
+}
+.plist-search-row input {
+  flex: 1;
+  width: 0; margin-top: 0 !important; padding: 0 !important;
+  border: none !important; background: none !important; box-shadow: none !important;
+  color: #fff !important; font-size: .82rem !important;
+  min-height: unset !important; border-radius: 0 !important;
+  outline: none !important;
+}
+.plist-search-row input::placeholder { color: rgba(255,255,255,.28) !important; }
+
+
+/* Search + Refresh action buttons */
+.plist-action-btn {
+  flex-shrink: 0;
+  width: 28px; height: 28px; min-height: 28px;
+  border: none; border-radius: 8px;
+  background: rgba(255,255,255,.08);
+  color: rgba(255,255,255,.5);
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background .15s, color .15s;
+}
+.plist-action-btn:hover {
+  background: rgba(255,255,255,.14);
+  color: rgba(255,255,255,.9);
+}
+.plist-action-btn:active { transform: scale(.92); }
+
+
+/* ── Search result items ── */
+#yt-results-section { flex-shrink: 0; }
+#yt-results { display: flex; flex-direction: column; gap: 3px; padding: 4px 8px 8px; }
+
+/* search-results-list = actual scroll container, fills remaining height */
+#search-results-list {
+  flex: 1;
+  overflow-y: auto;
+  min-height: 0;
+  padding: 0;
+}
+#search-results-list::-webkit-scrollbar { width: 3px; }
+#search-results-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius: 2px; }
+
+.yt-result-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 11px;
+  border: 1px solid transparent;
+  transition: background .14s, border-color .14s, transform .14s;
+  cursor: pointer;  /* clickable — card body = play */
+}
+.yt-result-item:hover {
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.08);
+  transform: translateY(-1px);
+}
+/* Active/playing state — currently playing this track */
+.yt-result-item.playing {
+  background: rgba(156,183,255,.08);
+  border-color: rgba(156,183,255,.25);
+  transform: none;
+}
+.yt-result-item.playing:hover {
+  background: rgba(156,183,255,.12);
+  border-color: rgba(156,183,255,.3);
+  transform: none; /* no lift when already active */
+}
+.yt-result-item.playing .yt-result-title {
+  color: var(--mood-accent, #9cb7ff);
+}
+/* Animated equalizer bars (inline in .yt-result-meta when playing) */
+.yt-eq-bars {
+  display: inline-flex;
+  gap: 2px;
+  align-items: flex-end;
+  height: 12px;
+  flex-shrink: 0;
+}
+.yt-eq-bars span {
+  display: block;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--mood-accent, #9cb7ff);
+  animation: ytEqBounce .7s ease-in-out infinite alternate;
+}
+.yt-eq-bars span:nth-child(2) { animation-delay: .15s; }
+.yt-eq-bars span:nth-child(3) { animation-delay: .3s; }
+@keyframes ytEqBounce {
+  from { height: 3px; }
+  to   { height: 11px; }
+}
+
+.yt-result-thumb {
+  width: 74px;
+  aspect-ratio: 16/9;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: rgba(255,255,255,.05);
+  transition: opacity .14s;
+}
+.yt-result-item:hover .yt-result-thumb { opacity: .88; }
+
+.yt-result-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.yt-result-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: .76rem;
+  font-weight: 600;
+  color: rgba(255,255,255,.88);
+  line-height: 1.35;
+}
+.yt-result-meta {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  font-size: .66rem;
+  color: rgba(255,255,255,.32);
+}
+.yt-result-sep { opacity: .35; }
+.yt-result-duration { font-variant-numeric: tabular-nums; }
+
+/* ── Add to Playlist button ── */
+.yt-add-btn {
+  flex-shrink: 0;
+  width: 28px; height: 28px; min-height: 28px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.13);
+  background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.5);
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .14s, color .14s, border-color .14s, transform .12s;
+  outline: none !important;
+  box-shadow: none !important;
+}
+.yt-add-btn:hover {
+  background: rgba(156,183,255,.18);
+  border-color: rgba(156,183,255,.35);
+  color: #fff;
+  transform: scale(1.1);
+}
+.yt-add-btn:active { transform: scale(.93); }
+/* Success state: added ✓ */
+.yt-add-btn.added {
+  background: rgba(80,210,120,.15);
+  border-color: rgba(80,210,120,.35);
+  color: #5ed48a;
+  transform: scale(1.05);
+}
+/* Duplicate state: already in playlist */
+.yt-add-btn.duplicate {
+  background: rgba(255,180,50,.12);
+  border-color: rgba(255,180,50,.3);
+  color: #ffb832;
+}
+
+/* Loading/error/empty states */
+.yt-results-msg {
+  padding: 2rem 1rem;
+  text-align: center;
+  font-size: .75rem;
+  color: rgba(255,255,255,.25);
+  line-height: 1.65;
+}
+
+
+/* Suggestion chips */
+.plist-chips {
+  display: flex; gap: 6px; flex-wrap: nowrap; overflow-x: auto;
+  padding: 8px 12px 4px; flex-shrink: 0;
+}
+.plist-chips::-webkit-scrollbar { display: none; }
+.plist-chip {
+  font-size: .7rem; font-weight: 600; padding: 4px 10px;
+  border-radius: 100px; white-space: nowrap;
+  background: rgba(255,255,255,.07); border: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.45); cursor: pointer; transition: all .15s;
+}
+.plist-chip.active, .plist-chip:hover {
+  background: rgba(255,255,255,.14); color: rgba(255,255,255,.92);
+  border-color: rgba(255,255,255,.22);
+}
+
+/* Track list */
+.plist-track-list {
+  flex: 1; overflow-y: auto; padding: 6px 8px;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.plist-track-list::-webkit-scrollbar { width: 3px; }
+.plist-track-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius:2px; }
+
+.plist-empty {
+  text-align: center; padding: 1.8rem 1rem;
+  font-size: .78rem; color: rgba(255,255,255,.22); line-height: 1.5;
+}
+
+/* Individual track item — fixed layout */
+.plist-track-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 60px;
+  padding: 8px 90px 8px 8px;
+  box-sizing: border-box;
+  border-radius: 11px;
+  cursor: pointer;
+  transition: background .15s;
+}
+.plist-track-item:hover { background: rgba(255,255,255,.06); }
+.plist-track-item.active {
+  background: rgba(255,255,255,.09);
+  border-left: 3px solid var(--mood-accent, #9cb7ff);
+  padding-left: 5px;
+}
+
+/* Thumbnail */
+.plist-track-thumb {
+  width: 52px;
+  height: 29px;
+  object-fit: cover;
+  border-radius: 6px;
+  flex-shrink: 0;
+  background: #111;
+}
+
+/* Text content */
+.plist-track-info {
+  flex: 1;
+  min-width: 0;
+}
+.plist-track-title {
+  display: block;
+  font-size: .8rem;
+  font-weight: 600;
+  color: rgba(255,255,255,.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.plist-track-sub {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 3px;
+}
+.plist-track-author {
+  font-size: .68rem;
+  color: rgba(255,255,255,.38);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Actions container — single absolute positioned container */
+.plist-track-actions {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  z-index: 20;
+}
+
+/* All action buttons — uniform styling */
+.plist-track-actions button {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  max-width: 24px;
+  max-height: 24px;
+  border-radius: 50%;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  margin: 0;
+  font-size: 11px;
+  line-height: 1;
+  cursor: pointer;
+  transition: background .15s, color .15s, transform .1s, opacity .15s;
+}
+
+/* Move up button */
+.plist-move-up {
+  background: rgba(156,183,255,.12);
+  color: rgba(156,183,255,.8);
+}
+.plist-move-up:hover {
+  background: rgba(156,183,255,.3);
+  color: #fff;
+  transform: scale(1.1);
+}
+.plist-move-up:active { transform: scale(.95); }
+
+/* Move down button */
+.plist-move-down {
+  background: rgba(156,183,255,.12);
+  color: rgba(156,183,255,.8);
+}
+.plist-move-down:hover {
+  background: rgba(156,183,255,.3);
+  color: #fff;
+  transform: scale(1.1);
+}
+.plist-move-down:active { transform: scale(.95); }
+
+/* Disabled state */
+.plist-move-up:disabled,
+.plist-move-down:disabled {
+  opacity: 0.25 !important;
+  cursor: not-allowed;
+  transform: none !important;
+}
+
+/* Remove button */
+.plist-remove-btn {
+  background: rgba(255,80,80,.12);
+  color: rgba(255,100,100,.7);
+}
+.plist-remove-btn:hover {
+  background: rgba(255,80,80,.3);
+  color: #ff6464;
+  transform: scale(1.1);
+}
+.plist-remove-btn:active { transform: scale(.95); }
+
+.plist-track-playing { font-size: .68rem; font-weight: 700; color: var(--mood-accent, #9cb7ff); }
+
+/* ── Chat tab ── */
+.plist-messages {
+  flex: 1; overflow-y: auto; padding: 16px 14px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.plist-messages::-webkit-scrollbar { width: 3px; }
+.plist-messages::-webkit-scrollbar-thumb { background: rgba(255,255,255,.1); border-radius:2px; }
+
+/* Chat Message Layout - Discord/Telegram style */
+.chat-message {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  animation: chatFadeIn 0.3s ease;
+}
+
+.chat-message-mine {
+  flex-direction: row-reverse;
+}
+
+.chat-message-other {
+  flex-direction: row;
+}
+
+/* Avatar wrapper */
+.chat-avatar-wrap {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+}
+
+.chat-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin-top: 2px;
+}
+
+/* Chat content block */
+.chat-content {
+  display: flex;
+  flex-direction: column;
+  max-width: 75%;
+  gap: 4px;
+}
+
+.chat-content-mine {
+  align-items: flex-end;
+}
+
+/* Header: name + time */
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.chat-message-mine .chat-header {
+  flex-direction: row-reverse;
+}
+
+.chat-name {
+  font-size: 12px;
+  font-weight: 600;
+  color: rgba(255,255,255,0.6);
+}
+
+.chat-time {
+  font-size: 10px;
+  color: rgba(255,255,255,0.35);
+}
+
+/* Bubble */
+.chat-bubble {
+  padding: 9px 14px;
+  border-radius: 18px;
+  font-size: 13px;
+  line-height: 1.45;
+  word-break: break-word;
+  color: rgba(255,255,255,0.92);
+  background: rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.chat-message-mine .chat-bubble {
+  background: var(--mood-accent, #9cb7ff);
+  color: #0a0a14;
+  border-bottom-right-radius: 6px;
+  border-bottom-left-radius: 18px;
+  border: none;
+}
+
+.chat-message-other .chat-bubble {
+  border-bottom-left-radius: 6px;
+}
+
+/* System Message (Welcome / Info) */
+.chat-message-system {
+  margin: 16px 0;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+}
+.chat-message-system .chat-bubble {
+  display: inline-block;
+  background: rgba(255,255,255,.05);
+  border: 1px solid rgba(255,255,255,.1);
+  color: rgba(255,255,255,.65);
+  font-size: 0.8rem;
+  padding: 8px 14px;
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+  max-width: 90%;
+  line-height: 1.4;
+}
+.chat-message-system a {
+  color: var(--mood-accent, #9cb7ff);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.2s;
+}
+.chat-message-system a:hover {
+  filter: brightness(1.2);
+  text-decoration: underline;
+}
+
+@keyframes chatFadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+.plist-chat-input {
+  display: flex; gap: 7px; padding: 9px 10px;
+  border-top: 1px solid rgba(255,255,255,.07); flex-shrink: 0;
+}
+.plist-chat-input input {
+  flex: 1; background: rgba(255,255,255,.07) !important; border: 1px solid rgba(255,255,255,.1) !important;
+  border-radius: 10px !important; padding: 7px 11px !important; color: #fff !important;
+  font-size: .82rem !important; min-height: unset !important; margin-top: 0 !important;
+  outline: none !important;
+}
+.plist-chat-input input::placeholder { color: rgba(255,255,255,.28) !important; }
+.plist-chat-input button {
+  width: 34px; height: 34px; min-height: unset; border: none;
+  background: rgba(255,255,255,.1); border-radius: 10px; color: rgba(255,255,255,.6);
+  cursor: pointer; display: flex; align-items: center; justify-content: center; transition: background .15s;
+}
+.plist-chat-input button:hover { background: rgba(255,255,255,.2); color: #fff; }
+
+/* ============================================================
+   NOW PLAYING BAR — top of Playlist tab
+   ============================================================ */
+.now-playing-bar {
+  margin: 8px 10px 4px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  background: rgba(156,183,255,.07);
+  border: 1px solid rgba(156,183,255,.18);
+  backdrop-filter: blur(12px);
+  flex-shrink: 0;
+  animation: npbFadeIn .3s ease;
+  transition: opacity .25s, transform .25s;
+}
+
+@keyframes npbFadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Label row — "▶▶ NOW PLAYING" */
+.npb-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: .58rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  color: var(--mood-accent, #9cb7ff);
+  opacity: .75;
+  margin-bottom: 8px;
+}
+
+/* Animated equalizer bars (4 bars) */
+.npb-eq {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 2px;
+  height: 10px;
+}
+.npb-eq span {
+  display: block;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--mood-accent, #9cb7ff);
+  animation: npbBar .7s ease-in-out infinite alternate;
+}
+.npb-eq span:nth-child(1) { animation-delay: 0s;    }
+.npb-eq span:nth-child(2) { animation-delay: .18s;  }
+.npb-eq span:nth-child(3) { animation-delay: .35s;  }
+.npb-eq span:nth-child(4) { animation-delay: .52s;  }
+@keyframes npbBar {
+  from { height: 2px; }
+  to   { height: 10px; }
+}
+
+/* Track row — thumb + info */
+.npb-track {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.npb-thumb {
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  border: 1px solid rgba(255,255,255,.12);
+  background: rgba(255,255,255,.05);
+}
+
+.npb-info {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;   /* left-align both title and artist */
+  text-align: left;
+}
+
+.npb-title {
+  font-size: .8rem;
+  font-weight: 700;
+  color: rgba(255,255,255,.93);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+  width: 100%;  /* needed for ellipsis to work in flex child */
+}
+
+.npb-artist {
+  font-size: .7rem;
+  font-weight: 500;
+  color: rgba(255,255,255,.4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-top: 2px;
+  width: 100%;
+}
+
+/* Active playlist item: border glow only — NO text badge */
+.plist-track-item.active {
+  background: rgba(156,183,255,.09) !important;
+  border-color: rgba(156,183,255,.25) !important;
+}
+.plist-track-item.active .plist-track-title {
+  color: var(--mood-accent, #9cb7ff);
+}
+
+/* ============================================================
+   PLAYER DOCK — Room page overrides
+   Fixes: title overflow, layout stability, thumbnail quality
+   ============================================================ */
+
+.room-dock-thumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  object-fit: cover;
+  flex-shrink: 0;
+  display: none; /* shown via JS when track loaded */
+  /* Hardware-accelerated rendering for crisp thumbnail */
+  transform: translateZ(0);
+  image-rendering: -webkit-optimize-contrast;
+}
+
+/* track-info: MUST have min-width:0 for flex child ellipsis to work */
+.track-info {
+  display: flex !important;
+  align-items: center;
+  gap: 10px;
+  /* Grow less aggressively — let progress-wrap have more space */
+  flex: 0 1 220px !important;
+  min-width: 0 !important;
+  overflow: hidden;
+}
+
+/* Inner text wrapper (direct div child of .track-info) */
+.track-info > div {
+  min-width: 0;        /* CRITICAL: without this, ellipsis won't work in flex */
+  overflow: hidden;
+  flex: 1;
+}
+
+/* Title: strict 1-line ellipsis, no layout jumping */
+.track-info .song-title {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100%;
+  display: block;
+  /* Prevent title from ever growing and pushing progress bar */
+  line-height: 1.2;
+}
+
+/* Artist/mood: same 1-line clamp */
+.track-info .song-mood {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 100%;
+  display: block;
+  margin-top: 3px;
+}
+
+/* Progress-wrap: flex:1 to fill remaining space cleanly */
+.progress-wrap {
+  flex: 1 1 200px !important;
+  min-width: 120px !important;
+}
+
+/* ============================================================
+   FLOATING EMOJI
+   ============================================================ */
+.floating-emoji {
+  position: fixed; bottom: 110px; pointer-events: none; z-index: 9999;
+  font-size: 2rem; animation: floatUpEmoji 2.4s cubic-bezier(.22,1,.36,1) forwards;
+}
+@keyframes floatUpEmoji {
+  0%  { opacity:0; transform:translateY(0) scale(.4); }
+  15% { opacity:1; transform:translateY(-24px) scale(1.25); }
+  80% { opacity:.8; }
+  100%{ opacity:0; transform:translateY(-260px) scale(.9) rotate(10deg); }
+}
+
+/* ============================================================
+   RESPONSIVE — Room layout only
+   ============================================================ */
+
+/* Tablet */
+@media (max-width: 1024px) {
+  .room-right { width: clamp(230px, 25vw, 280px); }
+}
+
+/* ============================================================
+   MOBILE — Fixed player architecture
+   ============================================================
+   ROOT CAUSE: On mobile, #center content (video + panel 300px)
+   can exceed the 1fr grid row → pushing #bottom below viewport.
+
+   FIX: position:fixed on #bottom → completely decoupled from
+   document flow. Content scrolls in #center with padding-bottom
+   to prevent being hidden under fixed player.
+   ============================================================ */
+@media (max-width: 768px) {
+
+  /* ── 1. PLAYER: Lift out of document flow ── */
+  #bottom {
+    position: fixed !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    right: 0 !important;
+    z-index: 50 !important;
+    /* Reset grid sizing */
+    width: 100% !important;
+  }
+
+  /* ── 2. CENTER: Rigid container, no overflow needed ── */
+  #center.room-layout {
+    display: flex !important;            /* keep flex, override display:contents from wrap */
+    flex-direction: column !important;
+    align-items: stretch !important;
+    overflow: hidden !important;         /* clip — scrolling done by inner .room-scroll-wrap */
+    padding: 0 !important;
+    gap: 0 !important;
+  }
+
+  /* ── ACTUAL SCROLL CONTAINER ──
+     flex:1 + min-height:0 inside a flex parent = definite height constraint
+     → overflow-y:auto WILL create real scrollable area with working padding-bottom */
+  .room-scroll-wrap {
+    display: flex !important;            /* override display:contents from desktop */
+    flex-direction: column !important;
+    flex: 1 !important;
+    min-height: 0 !important;           /* CRITICAL: allow flex child to shrink below content */
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    align-items: stretch !important;
+    /* Padding: top/sides small, bottom LARGE enough to clear fixed player */
+    padding: 8px 10px calc(160px + env(safe-area-inset-bottom, 20px)) 10px !important;
+    gap: 10px !important;
+  }
+
+  /* ── 3. LEFT: Natural height — no flex:1 conflict with aspect-ratio ── */
+  .room-left {
+    flex: none !important;
+    width: 100% !important;
+    align-items: stretch !important;
+  }
+
+  /* ── 4. RIGHT: Fixed-height panel — never resizes on tab switch ── */
+  .room-right {
+    width: 100% !important;
+    flex: none !important;
+    height: 300px !important;
+    min-height: 300px !important;
+    max-height: 300px !important;
+  }
+  .playlist-panel {
+    height: 100% !important;
+  }
+
+  /* ── 5. Visual Optimization ── */
+  .room-listeners-badge { display: none; }
+  .react-btn { width: 40px; height: 40px; font-size: 1rem; backdrop-filter: blur(6px); }
+  .room-dock-thumb { width: 38px !important; height: 38px !important; }
+  
+  /* Scrollable containers: GPU layer + momentum scroll */
+  .room-scroll-wrap,
+  .playlist-panel-body,
+  .room-messages {
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  /* will-change only on the main scroll container (not every element) */
+  .room-scroll-wrap {
+    will-change: transform;
+  }
+
+  /* Buttons: faster tap response */
+  .react-btn, .yt-add-btn, .plist-tab, .mood-sync-btn {
+    touch-action: manipulation;
+  }
+
+  /* Simplified UI for tier-low (handled via body class) */
+  body.tier-low .playlist-panel,
+  body.tier-low .now-playing-bar,
+  body.tier-low .chat-message-other .chat-bubble {
+    backdrop-filter: none !important;
+    background: rgba(15, 20, 35, 0.95) !important;
+  }
+  
+  body.tier-low .video-container {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5) !important;
+  }
+
+  /* FPS-Safe Mode (auto-triggered) */
+  body.fps-safe-mode .playlist-panel,
+  body.fps-safe-mode .now-playing-bar {
+    backdrop-filter: none !important;
+    background: rgba(10, 12, 20, 0.98) !important;
+    box-shadow: none !important;
+  }
+  
+  body.fps-safe-mode .video-mood-glow,
+  body.fps-safe-mode #bg::before {
+    display: none !important;
+  }
+
+  .playlist-panel {
+    backdrop-filter: blur(12px) saturate(120%) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,.3) !important;
+  }
+  
+  .video-container {
+    box-shadow: 0 0 0 1px rgba(255,255,255,.06), 0 12px 40px rgba(0,0,0,.5) !important;
+  }
+  
+  .now-playing-bar {
+    backdrop-filter: blur(8px) !important;
+  }
+  
+  .chat-message-other .chat-bubble {
+    backdrop-filter: blur(5px) !important;
+  }
+}
+
+/* Small mobile */
+@media (max-width: 480px) {
+  .video-container { border-radius: 14px; }
+  .react-btn { width: 36px; height: 36px; font-size: .95rem; }
+  .room-meta-badge { display: none; }
+  .plist-chips { padding: 6px 8px 2px; }
+
+  #center.room-layout {
+    /* tighter padding on small phones — scroll-wrap handles bottom space */
+  }
+
+  .room-scroll-wrap {
+    padding: 6px 8px calc(155px + env(safe-area-inset-bottom, 20px)) 8px !important;
+    gap: 8px !important;
+  }
+
+  .room-right {
+    height: 260px !important;
+    min-height: 260px !important;
+    max-height: 260px !important;
+  }
+}
+
+/* Landscape mobile — 2-column, player back to grid flow */
+@media (max-width: 900px) and (orientation: landscape) {
+  /* Restore #bottom to grid flow on landscape — enough height */
+  #bottom {
+    position: static !important;
+    width: auto !important;
+  }
+
+  /* Center: 2-column row layout */
+  #center.room-layout {
+    flex-direction: row !important;
+    overflow: hidden !important;
+    padding: 4px 8px !important;
+    padding-bottom: 4px !important;
+    gap: 12px !important;
+  }
+
+  .room-left {
+    flex: 1 !important;
+    width: auto !important;
+    align-items: center !important;
+  }
+
+  .room-right {
+    width: clamp(200px, 32vw, 260px) !important;
+    height: auto !important;
+    min-height: unset !important;
+    max-height: unset !important;
+    flex: none !important;
+  }
+  .playlist-panel { height: 100% !important; }
+}
+
+
+
+/* -- Mood panel sync buttons active state -- */
+.mood-sync-btn.active {
+  background: rgba(167, 139, 250, 0.25) !important;
+  border-color: rgba(167, 139, 250, 0.6) !important;
+  color: #c4b5fd !important;
+  box-shadow: 0 0 12px rgba(167, 139, 250, 0.3);
+  transform: translateY(-2px);
+}
+
+/* ============================================================
+   TRANSPARENT PANEL CATCHER — no visual, just click-outside-to-close
+   Sits between overlay (z:99) and panels (z:100)
+   ============================================================ */
+#panel-catcher {
+  position: fixed;
+  inset: 0;
+  z-index: 99;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+#panel-catcher.active {
+  pointer-events: auto;
+  opacity: 1;
+}
+
+/* ============================================================
+   MEMBER PANEL — uses shared .side-panel from main.css
+   Only content styles here; positioning comes from base .side-panel
+   ============================================================ */
+
+/* Panel body */
+#member-panel .panel-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  min-height: 0;
+}
+#member-panel .panel-body::-webkit-scrollbar { width: 3px; }
+#member-panel .panel-body::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+/* ── Member list ── */
+.member-list {
+  padding: 4px 0 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Empty state */
+.member-empty {
+  text-align: center;
+  padding: 2.5rem 1rem;
+  font-size: 0.78rem;
+  color: rgba(255, 255, 255, 0.25);
+  line-height: 1.6;
+}
+
+/* ── Member row ── */
+.member-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 8px 14px;
+  margin: 0 10px;
+  border-radius: 14px;
+  transition: all 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+.member-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.08);
+  transform: translateX(2px);
+}
+
+/* Host row — pinned top, slightly brighter, cinematic glow */
+.member-item.is-host {
+  background: rgba(160, 140, 255, 0.08);
+  border: 1px solid rgba(160, 140, 255, 0.2);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.member-item.is-host:hover {
+  background: rgba(160, 140, 255, 0.12);
+  border-color: rgba(160, 140, 255, 0.3);
+}
+
+/* Active controller row — subtle blue glass */
+.member-item.is-controller:not(.is-host) {
+  background: rgba(156, 183, 255, 0.04);
+  border: 1px solid rgba(156, 183, 255, 0.12);
+}
+.member-item.is-controller:not(.is-host):hover {
+  background: rgba(156, 183, 255, 0.07);
+}
+
+/* Avatar */
+.member-avatar-wrap {
+  flex-shrink: 0;
+  position: relative;
+  width: 46px;
+  height: 46px;
+}
+
+.member-avatar-img {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  display: block;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.2));
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* Host avatar: stronger glow */
+.member-item.is-host .member-avatar-img {
+  border-color: rgba(200, 180, 255, 0.5);
+  box-shadow: 0 0 12px rgba(160, 140, 255, 0.25);
+}
+
+/* Fallback avatar */
+.member-avatar-fallback {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: 1.5px solid rgba(255, 255, 255, 0.15);
+  flex-shrink: 0;
+}
+
+/* Member info block */
+.member-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.member-name-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+}
+
+/* Name */
+.member-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 0 1 auto;
+}
+
+.member-meta-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Name — clickable (host toggling controller) */
+.member-name-toggle {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.88);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  flex: 1;
+  min-width: 0;
+  cursor: pointer;
+  transition: color 0.15s;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.member-name-toggle:hover {
+  color: rgba(255, 255, 255, 1);
+}
+
+/* ── Right side: crown + badge ── */
+.member-right {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* "You" suffix */
+.member-you-tag {
+  font-size: 0.65rem;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.3);
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+/* Crown button — integrated control icon (Refined Rounded Square) */
+.member-crown-btn {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.03);
+  color: rgba(255, 255, 255, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: default;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  padding: 0;
+  box-shadow: 
+    0 4px 12px rgba(0, 0, 0, 0.2),
+    inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+/* Crown: host — active, golden/purple accent */
+.member-item.is-host .member-crown-btn {
+  background: rgba(167, 139, 250, 0.1);
+  border-color: rgba(167, 139, 250, 0.4);
+  color: #c4b5fd;
+  box-shadow: 0 0 15px rgba(167, 139, 250, 0.15);
+}
+
+/* Crown: controller (not host) — vibrant purple glow */
+.member-item.is-controller:not(.is-host) .member-crown-btn {
+  background: rgba(167, 139, 250, 0.15);
+  border-color: rgba(167, 139, 250, 0.6);
+  color: #c4b5fd;
+  box-shadow: 0 0 20px rgba(167, 139, 250, 0.25);
+}
+
+/* Interactions for Host — pointer + hover lift */
+.member-item.is-host:not(.is-self) .member-crown-btn {
+  cursor: pointer;
+}
+.member-item.is-host:not(.is-self) .member-crown-btn:hover {
+  background: rgba(167, 139, 250, 0.25);
+  border-color: rgba(167, 139, 250, 0.8);
+  color: #fff;
+  transform: translateY(-2px) scale(1.05);
+  box-shadow: 0 6px 20px rgba(167, 139, 250, 0.35);
+}
+.member-item.is-host:not(.is-self) .member-crown-btn:active {
+  transform: translateY(0) scale(0.95);
+}
+
+/* Controller pill badge — very compact */
+.badge-controller {
+  font-size: 0.54rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  padding: 1px 6px;
+  border-radius: 6px;
+  white-space: nowrap;
+  background: rgba(156, 183, 255, 0.1);
+  border: 1px solid rgba(156, 183, 255, 0.2);
+  color: rgba(156, 183, 255, 0.6);
+}
+
+/* ============================================================
+   CONTROLLER UI STATE
+   ============================================================ */
+.no-control .player-btn:not(.always-enabled) {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* ============================================================
+   CONFIRMATION MODAL — Midnight glassmorphism style
+   ============================================================ */
+#confirm-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(10px) saturate(130%);
+  -webkit-backdrop-filter: blur(10px) saturate(130%);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
+#confirm-backdrop.open {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+#confirm-modal {
+  width: 100%;
+  max-width: 360px;
+  padding: 32px 28px 24px;
+  border-radius: 28px;
+  background: rgba(14, 16, 32, 0.88);
+  border: 1px solid rgba(255, 255, 255, 0.11);
+  backdrop-filter: blur(32px) saturate(150%);
+  -webkit-backdrop-filter: blur(32px) saturate(150%);
+  box-shadow:
+    0 32px 80px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.04) inset,
+    0 1px 0 rgba(255, 255, 255, 0.08) inset;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0;
+  transform: scale(0.94);
+  transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+#confirm-backdrop.open #confirm-modal {
+  transform: scale(1);
+}
+
+.confirm-icon {
+  font-size: 2.2rem;
+  margin-bottom: 14px;
+  line-height: 1;
+}
+
+.confirm-title {
+  font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #fff;
+  margin: 0 0 10px;
+  letter-spacing: -0.02em;
+}
+
+.confirm-desc {
+  font-size: 0.84rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.52);
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 10px;
+  width: 100%;
+}
+
+.confirm-btn {
+  flex: 1;
+  height: 46px;
+  border-radius: 14px;
+  border: none;
+  font-family: 'Poppins', sans-serif;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s ease, transform 0.12s ease, box-shadow 0.18s ease;
+}
+
+.confirm-btn:active {
+  transform: scale(0.96);
+}
+
+/* Cancel button — subtle ghost */
+.confirm-btn.cancel {
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.75);
+}
+.confirm-btn.cancel:hover {
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+}
+
+/* Danger button — soft red/orange gradient */
+.confirm-btn.danger {
+  background: linear-gradient(135deg, #e05c5c, #d43a3a);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(220, 58, 58, 0.3);
+}
+.confirm-btn.danger:hover {
+  background: linear-gradient(135deg, #ec6666, #dc4444);
+  box-shadow: 0 6px 20px rgba(220, 58, 58, 0.4);
+}
+
+/* Leave mode — secondary danger style (slightly softer) */
+.confirm-btn.danger.leave {
+  background: rgba(255, 255, 255, 0.09);
+  border: 1px solid rgba(255, 100, 100, 0.25);
+  color: rgba(255, 120, 120, 0.9);
+  box-shadow: none;
+}
+.confirm-btn.danger.leave:hover {
+  background: rgba(255, 90, 90, 0.15);
+  border-color: rgba(255, 100, 100, 0.4);
+  color: #ff8080;
+}
+
+/* Mobile: safe-area padding */
+@media (max-width: 480px) {
+  #confirm-modal {
+    padding: 28px 20px 20px;
+  }
+  .confirm-actions {
+    gap: 8px;
+  }
+  .confirm-btn {
+    height: 44px;
+    font-size: 0.85rem;
+  }
+}

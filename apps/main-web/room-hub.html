@@ -1,0 +1,1931 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Room Hub — Midnight Mood</title>
+  <base href="/">
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌙</text></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700;800&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/css/room-hub.css?v=20260512_2">
+  <link rel="stylesheet" href="/css/transition.css?v=20260512_4">
+
+  <style>
+    /* ═══════════════════════════════════════════════════════════
+       MOBILE-FIRST BASE STYLES
+       Mobile is the primary experience
+       ═══════════════════════════════════════════════════════════ */
+
+    :root {
+      /* Safe area variables */
+      --safe-top: env(safe-area-inset-top, 0px);
+      --safe-bottom: env(safe-area-inset-bottom, 0px);
+      --safe-left: env(safe-area-inset-left, 0px);
+      --safe-right: env(safe-area-inset-right, 0px);
+      
+      /* Spacing scale */
+      --space-xs: 8px;
+      --space-sm: 12px;
+      --space-md: 16px;
+      --space-lg: 24px;
+      --space-xl: 32px;
+      --space-2xl: 48px;
+      
+      /* Border radius */
+      --radius-sm: 12px;
+      --radius-md: 16px;
+      --radius-lg: 20px;
+      --radius-xl: 24px;
+      --radius-full: 9999px;
+    }
+
+    /* Base reset */
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    html {
+      /* Prevent font scaling on iOS */
+      -webkit-text-size-adjust: 100%;
+    }
+
+    body {
+      margin: 0;
+      background: #07070d;
+      color: white;
+      font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      /* Mobile: use svh for better keyboard handling */
+      min-height: 100dvh;
+      height: auto;
+      overflow-x: hidden;
+      overscroll-behavior: none;
+      /* Smooth scrolling */
+      scroll-behavior: smooth;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       HOME BUTTON - Mobile optimized
+       ═══════════════════════════════════════════════════════════ */
+
+    .home-btn {
+      position: fixed;
+      top: calc(var(--safe-top) + 16px);
+      left: calc(var(--safe-left) + 16px);
+      z-index: 100;
+      
+      /* Compact size for mobile */
+      height: 36px;
+      padding: 0 14px;
+      border: none;
+      border-radius: var(--radius-full);
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      color: rgba(255, 255, 255, 0.8);
+      font-family: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      
+      /* Subtle shadow */
+      box-shadow: 0 2px 12px rgba(0, 0, 0, 0.3);
+      
+      transition: 
+        background 0.2s ease,
+        transform 0.2s ease,
+        box-shadow 0.2s ease;
+    }
+
+    .home-btn:hover {
+      background: rgba(255, 255, 255, 0.12);
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    }
+
+    .home-btn:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       HUB PAGE - Mobile layout
+       ═══════════════════════════════════════════════════════════ */
+
+    .hub-page {
+      /* Mobile: flexible height, centered vertical flow */
+      min-height: 100dvh;
+      min-height: 100svh;
+      height: auto;
+      
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      
+      padding: calc(var(--safe-top) + 80px) var(--space-md) calc(var(--safe-bottom) + var(--space-xl));
+      
+      position: relative;
+      overflow: hidden;
+      
+      /* Ambient background */
+      background: 
+        radial-gradient(ellipse 120% 40% at 50% -10%, rgba(139, 92, 246, 0.35) 0%, transparent 60%),
+        radial-gradient(ellipse 80% 30% at 20% 100%, rgba(6, 182, 212, 0.2) 0%, transparent 50%),
+        #07070d;
+    }
+
+    /* Ambient glow orbs - mobile positioned */
+    .hub-page::before,
+    .hub-page::after {
+      content: '';
+      position: fixed;
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .hub-page::before {
+      width: 280px;
+      height: 280px;
+      background: radial-gradient(circle, rgba(139, 92, 246, 0.4) 0%, transparent 70%);
+      filter: blur(60px);
+      top: -80px;
+      left: -100px;
+      animation: floatGlow 16s ease-in-out infinite alternate;
+    }
+
+    .hub-page::after {
+      width: 220px;
+      height: 220px;
+      background: radial-gradient(circle, rgba(6, 182, 212, 0.35) 0%, transparent 70%);
+      filter: blur(50px);
+      bottom: 100px;
+      right: -80px;
+      animation: floatGlow 12s ease-in-out infinite alternate-reverse;
+    }
+
+    @keyframes floatGlow {
+      0% { transform: translate(0, 0) scale(1); }
+      50% { transform: translate(20px, -15px) scale(1.05); }
+      100% { transform: translate(-15px, 20px) scale(0.95); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       STARS - Subtle, mobile optimized
+       ═══════════════════════════════════════════════════════════ */
+
+    .stars {
+      position: fixed;
+      inset: 0;
+      overflow: hidden;
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.6;
+    }
+
+    .star {
+      position: absolute;
+      width: 2px;
+      height: 2px;
+      border-radius: 50%;
+      background: white;
+      animation: twinkle 4s infinite ease-in-out;
+    }
+
+    .star.big {
+      width: 3px;
+      height: 3px;
+      box-shadow: 0 0 8px rgba(255, 255, 255, 0.5);
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 0.2; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.5); }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       HUB MAIN - Mobile container
+       ═══════════════════════════════════════════════════════════ */
+
+    .hub-main {
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      max-width: 420px;
+      
+      display: flex;
+      flex-direction: column;
+      gap: var(--space-lg);
+      
+      padding: 0 var(--space-xs);
+      
+      /* Breathing space at bottom */
+      padding-bottom: var(--space-2xl);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       HUB HERO - Adaptive hero (mobile → tablet → desktop)
+       Hero always exists, only scales/repositions
+       ═══════════════════════════════════════════════════════════ */
+
+    .hub-hero {
+      /* Start visible, adapt fluidly */
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      width: 100%;
+      
+      /* Fluid typography - scales smoothly */
+      font-size: clamp(24px, 6vw, 32px);
+      line-height: 1.1;
+      
+      /* Container sizing */
+      max-width: 100%;
+    }
+
+    .hub-hero-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      font-size: clamp(10px, 2vw, 13px);
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.7);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: clamp(6px, 1.5vw, 8px);
+    }
+
+    .hub-hero-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #22c55e;
+      box-shadow: 0 0 8px rgba(34, 197, 94, 0.6);
+    }
+
+    .hub-title {
+      display: flex;
+      flex-direction: column;
+      font-size: clamp(28px, 7vw, 92px);
+      font-weight: 800;
+      line-height: 1.0;
+      letter-spacing: -0.03em;
+      color: #fff;
+      margin: 0 0 clamp(8px, 2vw, 14px);
+    }
+
+    .hub-title-line--accent {
+      background: linear-gradient(135deg, #a78bfa, #f472b6);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hub-hero-tags {
+      display: flex;
+      flex-wrap: wrap;
+      gap: clamp(4px, 1vw, 8px);
+      margin-bottom: clamp(8px, 2vw, 14px);
+    }
+
+    .hub-hero-tag-pill {
+      padding: clamp(4px, 1vw, 8px) clamp(8px, 2vw, 12px);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      font-size: clamp(10px, 2vw, 13px);
+      font-weight: 500;
+      color: rgba(255, 255, 255, 0.5);
+    }
+
+    .hub-sub {
+      font-size: clamp(13px, 2.5vw, 16px);
+      line-height: 1.5;
+      color: rgba(255, 255, 255, 0.5);
+      margin: 0;
+      max-width: clamp(240px, 50vw, 500px);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       MOBILE HERO - DEPRECATED, merged into .hub-hero
+       Keeping for compatibility, hiding it
+       ═══════════════════════════════════════════════════════════ */
+
+    .mobile-hero {
+      display: none;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       HUB PANEL - Mobile card
+       ═══════════════════════════════════════════════════════════ */
+
+    .hub-panel {
+      /* Mobile: full width, compact padding */
+      width: 100%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.04));
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: var(--radius-xl);
+      padding: var(--space-md);
+      
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      
+      box-shadow: 
+        0 4px 24px rgba(0, 0, 0, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       PROFILE CARD - Mobile optimized
+       ═══════════════════════════════════════════════════════════ */
+
+    .profile-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      padding: var(--space-sm);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      margin-bottom: var(--space-sm);
+      
+      cursor: pointer;
+      transition: background 0.2s ease;
+    }
+
+    .profile-card:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    .profile-edit-btn {
+      border: none;
+      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.7);
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .profile-edit-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    /* Profile avatar */
+    #profile-avatar {
+      width: 38px !important;
+      height: 38px !important;
+      border-radius: var(--radius-md) !important;
+    }
+
+    /* Profile name - mobile responsive */
+    #profile-name {
+      font-size: 14px !important;
+      font-weight: 600 !important;
+      color: rgba(255, 255, 255, 0.95) !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       HUB ACTIONS - Mobile optimized
+       ═══════════════════════════════════════════════════════════ */
+
+    .hub-actions {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: var(--space-sm);
+      margin-top: var(--space-xs);
+    }
+
+    .hub-action-box {
+      /* Mobile: vertical layout, centered */
+      padding: var(--space-md) var(--space-sm);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: var(--space-xs);
+      
+      cursor: pointer;
+      text-align: center;
+      
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .hub-action-box:hover {
+      transform: translateY(-3px);
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(168, 85, 247, 0.4);
+      box-shadow: 0 8px 24px rgba(139, 92, 246, 0.15);
+    }
+
+    .hub-action-box:active {
+      transform: scale(0.97);
+    }
+
+    .hub-action-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #8b5cf6, #ec4899);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      flex-shrink: 0;
+    }
+
+    .hub-action-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: rgba(255, 255, 255, 0.9);
+      line-height: 1.2;
+    }
+
+    .hub-action-sub {
+      display: none; /* Hidden on mobile */
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       AVATAR GRID - Mobile scrollable
+       ═══════════════════════════════════════════════════════════ */
+
+    .avatar-scroll {
+      width: 100%;
+      display: flex;
+      gap: var(--space-xs);
+      overflow-x: auto;
+      padding: 2px;
+      margin-bottom: var(--space-sm);
+      scrollbar-width: none;
+      -webkit-overflow-scrolling: touch;
+      white-space: nowrap;
+    }
+
+    .avatar-scroll::-webkit-scrollbar {
+      display: none;
+    }
+
+    .avatar-option {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-size: 16px;
+      transition: all 0.2s ease;
+    }
+
+    .avatar-option:hover {
+      transform: translateY(-2px);
+      background: rgba(255, 255, 255, 0.1);
+    }
+
+    .active-avatar {
+      border-color: #c084fc !important;
+      box-shadow: 0 0 0 2px rgba(192, 132, 252, 0.3);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       MOOD GRID - Mobile
+       ═══════════════════════════════════════════════════════════ */
+
+    .mood-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 6px;
+      margin-bottom: var(--space-sm);
+    }
+
+    .mood-btn {
+      height: 36px;
+      border: none;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: rgba(255, 255, 255, 0.7);
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .mood-btn:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: translateY(-1px);
+    }
+
+    .active-mood {
+      background: linear-gradient(135deg, #8b5cf6, #ec4899) !important;
+      border-color: transparent !important;
+      color: white !important;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       INPUTS - Mobile optimized
+       ═══════════════════════════════════════════════════════════ */
+
+    .hub-input {
+      width: 100%;
+      height: 44px;
+      padding: 0 var(--space-sm);
+      border-radius: var(--radius-md);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(255, 255, 255, 0.06);
+      color: white;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+      margin-bottom: var(--space-sm);
+      transition: all 0.2s ease;
+    }
+
+    .hub-input::placeholder {
+      color: rgba(255, 255, 255, 0.4);
+    }
+
+    .hub-input:focus {
+      border-color: rgba(168, 85, 247, 0.6);
+      background: rgba(255, 255, 255, 0.08);
+      box-shadow: 0 0 0 3px rgba(168, 85, 247, 0.15);
+    }
+
+    .hub-btn-primary {
+      width: 100%;
+      height: 48px;
+      border: none;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #c084fc, #f472b6);
+      color: white;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(192, 132, 252, 0.3);
+      transition: all 0.2s ease;
+    }
+
+    .hub-btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(192, 132, 252, 0.4);
+    }
+
+    .hub-btn-primary:active {
+      transform: translateY(0) scale(0.98);
+    }
+
+    .hub-btn-primary:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       MODALS - Mobile optimized
+       ═══════════════════════════════════════════════════════════ */
+
+    .modal-backdrop {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+      z-index: 200;
+      align-items: flex-end;
+      justify-content: center;
+      padding: var(--space-md);
+      
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-backdrop.open {
+      display: flex;
+      opacity: 1;
+    }
+
+    .modal-content {
+      width: 100%;
+      max-width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      
+      background: linear-gradient(180deg, rgba(25, 15, 50, 0.98), rgba(10, 8, 25, 0.98));
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+      padding: var(--space-lg);
+      
+      transform: translateY(100%);
+      transition: transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .modal-backdrop.open .modal-content {
+      transform: translateY(0);
+    }
+
+    .modal-close-btn {
+      position: absolute;
+      top: var(--space-md);
+      right: var(--space-md);
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.08);
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+    }
+
+    .modal-close-btn:hover {
+      background: rgba(255, 255, 255, 0.15);
+      transform: rotate(90deg);
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: 700;
+      margin: 0 0 var(--space-xs);
+      letter-spacing: -0.02em;
+    }
+
+    .modal-sub {
+      font-size: 13px;
+      color: rgba(255, 255, 255, 0.6);
+      margin-bottom: var(--space-lg);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       AVATAR PICKER - Mobile grid
+       ═══════════════════════════════════════════════════════════ */
+
+    .avatar-img-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: var(--space-xs);
+      margin-bottom: var(--space-md);
+    }
+
+    .avatar-img-opt {
+      aspect-ratio: 1;
+      border-radius: var(--radius-sm);
+      overflow: hidden;
+      border: 2px solid rgba(255, 255, 255, 0.08);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .avatar-img-opt:hover {
+      transform: scale(1.05);
+      border-color: rgba(192, 132, 252, 0.5);
+    }
+
+    .avatar-img-opt.active-avatar {
+      border-color: #c084fc;
+      box-shadow: 0 0 0 2px rgba(192, 132, 252, 0.3);
+    }
+
+    .avatar-img-opt img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       ERROR MESSAGES
+       ═══════════════════════════════════════════════════════════ */
+
+    .error-msg {
+      color: #f87171;
+      font-size: 12px;
+      margin-top: -8px;
+      margin-bottom: var(--space-sm);
+      padding-left: 4px;
+      display: none;
+    }
+
+    .error-msg.show {
+      display: block;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       PROFILE MENU
+       ═══════════════════════════════════════════════════════════ */
+
+    .profile-menu {
+      display: none;
+      margin-top: var(--space-sm);
+    }
+
+    .profile-menu.open {
+      display: block;
+    }
+
+    .profile-menu-card {
+      padding: var(--space-sm);
+      border-radius: var(--radius-lg);
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .profile-menu-title {
+      font-size: 13px;
+      font-weight: 700;
+      margin-bottom: var(--space-sm);
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       ROOM SCREEN (hidden on mobile)
+       ═══════════════════════════════════════════════════════════ */
+
+    .room-screen {
+      display: none;
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       KEYBOARD OPEN (mobile)
+       When keyboard opens, adjust layout
+       ═══════════════════════════════════════════════════════════ */
+
+    @supports (height: 100dvh) {
+      body.keyboard-open .hub-page {
+        padding-top: calc(var(--safe-top) + 20px);
+        min-height: auto;
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       TABLET INTERMEDIATE STYLES
+       600px - 899px: Hero scales, stacked layout
+       ═══════════════════════════════════════════════════════════ */
+
+    @media (min-width: 600px) and (max-width: 899px) {
+      .hub-main {
+        max-width: 600px;
+        gap: var(--space-xl);
+        padding: 0 var(--space-lg);
+      }
+
+      .hub-hero {
+        align-items: center;
+        text-align: center;
+        gap: var(--space-sm);
+      }
+
+      .hub-hero-tag {
+        padding: 6px 14px;
+        font-size: 12px;
+      }
+
+      .hub-title {
+        font-size: clamp(36px, 7vw, 48px);
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.2em;
+      }
+
+      .hub-title-line--together {
+        display: block;
+        width: 100%;
+      }
+
+      .hub-hero-tags {
+        justify-content: center;
+      }
+
+      .hub-sub {
+        text-align: center;
+        max-width: 400px;
+      }
+
+      .hub-panel {
+        padding: var(--space-lg);
+        border-radius: var(--radius-xl);
+      }
+
+      .hub-actions {
+        gap: var(--space-md);
+      }
+
+      .hub-action-box {
+        flex-direction: row;
+        justify-content: flex-start;
+        text-align: left;
+        gap: var(--space-md);
+        padding: var(--space-md) var(--space-lg);
+      }
+
+      .hub-action-icon {
+        width: 40px;
+        height: 40px;
+        font-size: 18px;
+      }
+
+      .hub-action-title {
+        font-size: 15px;
+      }
+
+      .hub-action-sub {
+        display: block;
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.5);
+      }
+
+      .avatar-option {
+        width: 42px;
+        height: 42px;
+      }
+    }
+
+    /* Hide mobile-hero on tablet+ (deprecated class) */
+    @media (min-width: 600px) {
+      .mobile-hero {
+        display: none !important;
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       DESKTOP STYLES
+       900px and above
+       ═══════════════════════════════════════════════════════════ */
+
+    @media (min-width: 900px) {
+      body {
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .home-btn {
+        position: absolute;
+        top: var(--space-lg);
+        left: var(--space-lg);
+        height: 42px;
+        padding: 0 var(--space-md);
+        font-size: 13px;
+      }
+
+      .hub-page {
+        height: 100vh;
+        justify-content: center;
+        padding: var(--space-2xl);
+        
+        /* Desktop: side-by-side glow */
+        background: 
+          radial-gradient(circle at 20% 30%, rgba(139, 92, 246, 0.28) 0%, transparent 35%),
+          radial-gradient(circle at 80% 70%, rgba(6, 182, 212, 0.22) 0%, transparent 35%),
+          #07070d;
+      }
+
+      .hub-page::before {
+        width: 500px;
+        height: 500px;
+        top: -150px;
+        left: -100px;
+      }
+
+      .hub-page::after {
+        width: 400px;
+        height: 400px;
+        bottom: -150px;
+        right: -100px;
+      }
+
+      .hub-main {
+        max-width: 1100px;
+        flex-direction: row;
+        align-items: center;
+        gap: var(--space-2xl);
+        padding: 0 var(--space-lg);
+      }
+
+      .hub-hero {
+        flex: 1;
+        padding-top: 60px;
+        align-items: flex-start;
+        text-align: left;
+      }
+
+      .hub-title {
+        font-size: clamp(48px, 7vw, 92px);
+        line-height: 0.92;
+        flex-direction: column;
+        justify-content: flex-start;
+        text-align: left;
+      }
+
+      .hub-title-line--together {
+        display: inline;
+        width: auto;
+      }
+
+      .hub-hero-tags {
+        justify-content: flex-start;
+      }
+
+      .hub-sub {
+        text-align: left;
+      }
+
+      .hub-panel {
+        flex: 0 0 420px;
+        max-width: 420px;
+      }
+
+      /* Modal: center on desktop */
+      .modal-backdrop {
+        align-items: center;
+      }
+
+      .modal-content {
+        max-width: 440px;
+        border-radius: var(--radius-xl);
+        transform: translateY(30px) scale(0.95);
+      }
+
+      .modal-backdrop.open .modal-content {
+        transform: translateY(0) scale(1);
+      }
+
+      .avatar-img-grid {
+        grid-template-columns: repeat(5, 1fr);
+      }
+
+      .mood-grid {
+        grid-template-columns: repeat(5, 1fr);
+        gap: var(--space-xs);
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       LARGE DESKTOP
+       ═══════════════════════════════════════════════════════════ */
+
+    @media (min-width: 1200px) {
+      .hub-main {
+        max-width: 1240px;
+        gap: 80px;
+      }
+
+      .hub-title {
+        font-size: 92px;
+      }
+
+      .hub-panel {
+        flex: 0 0 440px;
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       REDUCED MOTION
+       ═══════════════════════════════════════════════════════════ */
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       LANDSCAPE MOBILE
+       Adjust layout for landscape phones
+       ═══════════════════════════════════════════════════════════ */
+
+    @media (max-height: 500px) and (orientation: landscape) {
+      .hub-page {
+        padding-top: calc(var(--safe-top) + 60px);
+        padding-bottom: calc(var(--safe-bottom) + var(--space-md));
+      }
+
+      .hub-main {
+        flex-direction: row;
+        max-width: 100%;
+        gap: var(--space-md);
+      }
+
+      .hub-panel {
+        max-width: 320px;
+      }
+
+      .hub-actions {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       DARK MODE ADJUSTMENTS
+       Ensure visibility on OLED screens
+       ═══════════════════════════════════════════════════════════ */
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background: #000;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="hub-page" id="hub-page">
+
+    <button class="home-btn" onclick="RoomTransition.toHome()">
+      ← Trang chủ
+    </button>
+
+    <div class="stars">
+      <div class="star" style="top:8%;left:12%;animation-delay:.2s"></div>
+      <div class="star big" style="top:14%;left:68%;animation-delay:1s"></div>
+      <div class="star" style="top:24%;left:42%;animation-delay:2s"></div>
+      <div class="star" style="top:34%;left:82%;animation-delay:1.5s"></div>
+      <div class="star big" style="top:44%;left:24%;animation-delay:2.2s"></div>
+      <div class="star" style="top:54%;left:58%;animation-delay:.8s"></div>
+      <div class="star" style="top:64%;left:16%;animation-delay:1.7s"></div>
+      <div class="star big" style="top:74%;left:74%;animation-delay:2.8s"></div>
+      <div class="star" style="top:84%;left:48%;animation-delay:.4s"></div>
+      <div class="star" style="top:18%;left:90%;animation-delay:1.2s"></div>
+      <div class="star big" style="top:88%;left:10%;animation-delay:2.5s"></div>
+      <div class="star" style="top:48%;left:92%;animation-delay:.6s"></div>
+      <div class="star" style="top:28%;left:6%;animation-delay:2.1s"></div>
+      <div class="star big" style="top:58%;left:36%;animation-delay:1.3s"></div>
+      <div class="star" style="top:72%;left:60%;animation-delay:2.7s"></div>
+    </div>
+
+    <main class="hub-main">
+
+      <!-- Unified Hero - fluid responsive -->
+      <section class="hub-hero">
+        <div class="hub-hero-tag">
+          <span class="hub-hero-dot"></span>
+          <span>Night music</span>
+        </div>
+
+        <h1 class="hub-title">
+          <span>Late night</span>
+          <span class="hub-title-line--accent">listening.</span>
+          <span class="hub-title-line--together">Together.</span>
+        </h1>
+
+        <div class="hub-hero-tags">
+          <span class="hub-hero-tag-pill">YouTube Sync</span>
+          <span class="hub-hero-tag-pill">Realtime</span>
+          <span class="hub-hero-tag-pill">No Login</span>
+        </div>
+
+        <p class="hub-sub">
+          Tạo phòng riêng hoặc vào phòng của bạn bè.
+          Nghe nhạc YouTube cùng nhau, đồng bộ thời gian thực.
+        </p>
+
+      </section>
+
+      <section class="hub-panel">
+
+        <!-- Profile card — click opens profile menu -->
+        <div class="profile-card" id="profile-card" onclick="toggleProfileMenu()">
+          <div style="display:flex;align-items:center;gap:12px">
+            <div id="profile-avatar" style="width:42px;height:42px;border-radius:18px;background:linear-gradient(135deg,#8b5cf6,#ec4899);display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden"><img id="profile-avatar-img" src="" alt="avatar" style="width:100%;height:100%;object-fit:cover;border-radius:inherit;display:none"><span id="profile-avatar-emoji">🎧</span></div>
+            <div>
+              <div id="profile-name" style="font-weight:700">Guest User</div>
+              <div style="font-size:13px;color:#aaa">Đang ở trong hub</div>
+            </div>
+          </div>
+
+          <!-- Edit button: stops propagation so it doesn't toggle menu -->
+          <button class="profile-edit-btn" type="button" onclick="event.stopPropagation(); openProfileEdit()">
+            ✏️ Edit
+          </button>
+        </div>
+
+        <div class="hub-actions">
+          <div class="hub-action-box" onclick="openModal('create')">
+            <div class="hub-action-icon">✨</div>
+            <div class="hub-action-title">Tạo phòng</div>
+          </div>
+
+          <div class="hub-action-box" onclick="openModal('join')">
+            <div class="hub-action-icon">🎧</div>
+            <div class="hub-action-title">Vào phòng</div>
+          </div>
+        </div>
+
+      </section>
+    </main>
+  </div>
+
+  <!-- ── MODAL SYSTEM ── -->
+
+  <!-- Profile Edit Modal -->
+  <div class="modal-backdrop" id="profile-modal-backdrop" onclick="handleBackdropClick(event, 'profile')">
+    <div class="modal-content">
+      <button class="modal-close-btn" onclick="closeModal()">✕</button>
+      <h2 class="modal-title">✏️ Chỉnh sửa profile</h2>
+      <p class="modal-sub">Thay đổi danh tính của bạn trong hub</p>
+
+      <div style="font-size:12px;color:#aaa;margin-bottom:10px;font-weight:700;letter-spacing:.1em">CHỌN AVATAR</div>
+      <div id="avatar-img-grid" class="avatar-img-grid">
+        <!-- Populated by JS -->
+      </div>
+
+      <div style="font-size:12px;color:#aaa;margin-bottom:8px;font-weight:700;letter-spacing:.1em">TÊN HIỂN THỊ</div>
+      <input class="hub-input" id="profile-name-input" placeholder="Nhập tên của bạn...">
+      <div id="profile-error" class="error-msg">Vui lòng nhập tên hiển thị</div>
+
+      <button class="hub-btn-primary" onclick="saveProfile()">
+        💾 Lưu thay đổi
+      </button>
+    </div>
+  </div>
+
+  <!-- Join Room Modal -->
+  <div class="modal-backdrop" id="join-modal-backdrop" onclick="handleBackdropClick(event, 'join')">
+    <div class="modal-content">
+      <button class="modal-close-btn" onclick="closeModal()">✕</button>
+      <h2 class="modal-title">🎧 Vào phòng</h2>
+      <p class="modal-sub">Nhập mã để bắt đầu nghe nhạc cùng bạn bè</p>
+
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin-bottom:20px">
+        <div id="join-user-avatar" style="width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <img id="join-avatar-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none">
+          <span id="join-avatar-emoji">🎧</span>
+        </div>
+        <div>
+          <div id="join-user-name" style="font-weight:700;font-size:14px">Guest User</div>
+          <div style="font-size:12px;color:#aaa">Danh tính hiện tại</div>
+        </div>
+        <button onclick="openModal('profile')" style="margin-left:auto;background:rgba(255,255,255,.06);border:none;color:white;padding:6px 10px;border-radius:10px;font-size:11px;cursor:pointer">Đổi</button>
+      </div>
+
+      <div style="font-size:12px;color:#aaa;margin-bottom:8px;font-weight:700;letter-spacing:.1em">MÃ PHÒNG</div>
+      <input class="hub-input" id="join-room-input" placeholder="VD: ABC123" style="text-transform:uppercase">
+      <div id="join-error" class="error-msg">Vui lòng nhập mã phòng</div>
+
+      <div id="join-pw-wrap" style="display:none">
+        <div style="font-size:12px;color:#aaa;margin-bottom:8px;font-weight:700;letter-spacing:.1em">MẬT KHẨU</div>
+        <input class="hub-input" id="join-password-input" type="password" placeholder="Mật khẩu bảo vệ">
+      </div>
+
+      <button class="hub-btn-primary" id="join-room-btn" onclick="handleJoinRoom()">
+        Tham gia ngay
+      </button>
+    </div>
+  </div>
+
+  <!-- Create Room Modal -->
+  <div class="modal-backdrop" id="create-modal-backdrop" onclick="handleBackdropClick(event, 'create')">
+    <div class="modal-content">
+      <button class="modal-close-btn" onclick="closeModal()">✕</button>
+      <h2 class="modal-title">✨ Tạo phòng mới</h2>
+      <p class="modal-sub">Bắt đầu không gian âm nhạc của riêng bạn</p>
+
+      <!-- Creator identity -->
+      <div style="display:flex;align-items:center;gap:12px;padding:14px;border-radius:20px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);margin-bottom:20px">
+        <div id="create-user-avatar" style="width:40px;height:40px;border-radius:14px;background:rgba(255,255,255,.05);display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <img id="create-avatar-img" src="" alt="" style="width:100%;height:100%;object-fit:cover;display:none">
+          <span id="create-avatar-emoji">🎧</span>
+        </div>
+        <div>
+          <div id="create-user-name" style="font-weight:700;font-size:14px">Guest User</div>
+          <div style="font-size:12px;color:#aaa">Chủ phòng</div>
+        </div>
+        <button onclick="openModal('profile')" style="margin-left:auto;background:rgba(255,255,255,.06);border:none;color:white;padding:6px 10px;border-radius:10px;font-size:11px;cursor:pointer">Đổi</button>
+      </div>
+
+      <div style="font-size:12px;color:#aaa;margin-bottom:8px;font-weight:700;letter-spacing:.1em">TÊN PHÒNG</div>
+      <input class="hub-input" id="room-name-input" placeholder="VD: Góc chill cuối tuần...">
+      <div id="create-error" class="error-msg">Vui lòng nhập tên phòng</div>
+
+      <div style="font-size:12px;color:#aaa;margin-bottom:10px;font-weight:700;letter-spacing:.1em">MOOD</div>
+      <div class="mood-grid">
+        <button class="mood-btn active-mood" onclick="selectMood(this)" data-mood="sad">😢 Sad</button>
+        <button class="mood-btn" onclick="selectMood(this)" data-mood="happy">😊 Happy</button>
+        <button class="mood-btn" onclick="selectMood(this)" data-mood="chill">🌙 Chill</button>
+        <button class="mood-btn" onclick="selectMood(this)" data-mood="sleep">😴 Sleep</button>
+        <button class="mood-btn" onclick="selectMood(this)" data-mood="study">📚 Study</button>
+      </div>
+
+      <div style="font-size:12px;color:#aaa;margin-top:20px;margin-bottom:10px;font-weight:700;letter-spacing:.1em">CHẾ ĐỘ</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+        <button id="public-room-btn" onclick="setRoomType('public')" style="height:44px;border:1px solid rgba(255,255,255,.1);border-radius:14px;color:white;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;background:linear-gradient(135deg,#8b5cf6,#ec4899)">
+          🌍 Công khai
+        </button>
+        <button id="private-room-btn" onclick="setRoomType('private')" style="height:44px;border:1px solid rgba(255,255,255,.06);border-radius:14px;color:white;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;background:rgba(255,255,255,.04)">
+          🔒 Riêng tư
+        </button>
+      </div>
+
+      <div id="password-field" style="display:none">
+        <div style="font-size:12px;color:#aaa;margin-bottom:8px;font-weight:700;letter-spacing:.1em">MẬT KHẨU PHÒNG</div>
+        <input class="hub-input" id="room-password-input" type="password" placeholder="Nhập mật khẩu...">
+      </div>
+
+      <button class="hub-btn-primary" id="create-room-btn" onclick="handleCreateRoom()">
+        🚀 Tạo Không Gian
+      </button>
+    </div>
+  </div>
+
+  <!-- config.js: phải load trước socket.io để có window.CONFIG -->
+  <script src="/js/config.js"></script>
+
+  <!-- Socket.io client -->
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <script src="/js/transition.js?v=20260512_4"></script>
+  <script src="/js/room-constants.js"></script>
+  <script src="/js/room-logic.js"></script>
+
+
+  <script>
+    // ================================================================
+    // RoomHub — Phase 1 Interaction Layer (Fixed)
+    // ================================================================
+
+    // ── Avatar Registry (mirror of guest-profile.js) ───────────────
+    const AVATAR_REGISTRY = [
+      '/assets/avatars/bat-midnight-hoodie.jpeg',
+      '/assets/avatars/rabbit-night-headphones.jpeg',
+      '/assets/avatars/shark-neon-sleepy.jpeg',
+      '/assets/avatars/moon-spirit-neon.jpeg',
+      '/assets/avatars/cat-sleepy-purple.jpeg',
+      '/assets/avatars/duck-late-night.jpeg',
+      '/assets/avatars/owl-midnight-study.jpeg',
+      '/assets/avatars/fox-hoodie-night.jpeg',
+      '/assets/avatars/penguin-chill-headphones.jpeg',
+      '/assets/avatars/jellyfish-neon-glow.jpeg',
+      '/assets/avatars/Sleepy_black_cat_mascot_icon_202605120318.jpeg',
+      '/assets/avatars/star-spirit-dreamy.jpeg',
+      '/assets/avatars/ghost-soft-glow.jpeg',
+      '/assets/avatars/frog-headphones-lofi.jpeg',
+      '/assets/avatars/bear-pixel-hoodie.jpeg',
+      '/assets/avatars/robot-lofi-neon.jpeg',
+      '/assets/avatars/blob-spirit-soft.jpeg',
+      '/assets/avatars/cassette-lofi-retro.jpeg',
+      '/assets/avatars/cloud-dreamy-stars.jpeg',
+      '/assets/avatars/raccoon-cassette-lofi.jpeg',
+    ];
+
+    const PROFILE_KEY = 'mm_guest_profile';
+
+    // ── Guest Profile helpers (inline — không dùng ES module) ──────
+    function _getGuestProfile() {
+      try {
+        const raw = localStorage.getItem(PROFILE_KEY);
+        if (raw) {
+          const p = JSON.parse(raw);
+          if (p && p.nickname && p.avatar) return p;
+        }
+      } catch (_) {}
+      // Auto-generate
+      const adjs = ['Sleepy','Midnight','Lofi','Cosmic','Velvet','Silent','Dreamy','Starry','Quiet','Neon'];
+      const nouns = ['Fox','Cat','Bear','Owl','Ghost','Star','Moon','Rain','Cloud','Wave'];
+      const nickname = adjs[Math.floor(Math.random()*adjs.length)] + nouns[Math.floor(Math.random()*nouns.length)] + Math.floor(Math.random()*99);
+      const avatar = AVATAR_REGISTRY[Math.floor(Math.random()*AVATAR_REGISTRY.length)];
+      const profile = { nickname, avatar, createdAt: Date.now() };
+      _saveGuestProfile(profile);
+      return profile;
+    }
+
+    function _saveGuestProfile(profile) {
+      try { localStorage.setItem(PROFILE_KEY, JSON.stringify(profile)); } catch (_) {}
+    }
+
+    // ── Hub Controller & State ─────────────────────────────────────
+    const HubState = {
+      modalOpen: null,      // null | 'profile' | 'create' | 'join'
+      selectedMood: 'sad',
+      isPrivate: false,
+      socket: null,
+      selectedAvatarUrl: '',
+    };
+
+    var hub$ = id => document.getElementById(id);
+    var hubQs = sel => document.querySelector(sel);
+
+    // ── Unified Modal Logic ────────────────────────────────────────
+    function openModal(type) {
+      if (HubState.modalOpen === type) return;
+      closeModal(true); // Close existing without delay if switching
+
+      HubState.modalOpen = type;
+      const backdrop = hub$(`${type}-modal-backdrop`);
+      if (!backdrop) return;
+
+      // Populate data before showing
+      if (type === 'profile') {
+        const profile = _getGuestProfile();
+        hub$('profile-name-input').value = profile.nickname || '';
+        HubState.selectedAvatarUrl = profile.avatar || AVATAR_REGISTRY[0];
+        buildAvatarGrid(HubState.selectedAvatarUrl);
+      } else if (type === 'create' || type === 'join') {
+        const profile = _getGuestProfile();
+        syncProfilePreviews(profile.nickname, profile.avatar);
+        
+        // Reset specific fields
+        if (type === 'join') {
+          hub$('join-pw-wrap').style.display = 'none';
+          const btn = hub$('join-room-btn');
+          btn.textContent = 'Tham gia ngay';
+          btn.onclick = handleJoinRoom;
+          btn.disabled = false;
+        }
+
+        if (type === 'create') {
+          // Reset create-specific HubState
+          HubState.selectedMood = 'chill';
+          HubState.isPrivate = false;
+          // Reset form fields
+          const roomNameInput = hub$('room-name-input');
+          if (roomNameInput) roomNameInput.value = '';
+          const roomPwdInput = hub$('room-password-input');
+          if (roomPwdInput) roomPwdInput.value = '';
+          const pwf = hub$('password-field');
+          if (pwf) pwf.style.display = 'none';
+          // Reset mood UI
+          document.querySelectorAll('.mood-btn').forEach(btn => {
+            btn.classList.toggle('active-mood', btn.dataset.mood === 'chill');
+          });
+          // Reset room type UI
+          const pub = hub$('public-room-btn');
+          const prv = hub$('private-room-btn');
+          if (pub) {
+            pub.style.background = 'linear-gradient(135deg,#8b5cf6,#ec4899)';
+            pub.style.borderColor = 'rgba(255,255,255,.15)';
+          }
+          if (prv) {
+            prv.style.background = 'rgba(255,255,255,.04)';
+            prv.style.borderColor = 'rgba(255,255,255,.06)';
+          }
+          console.log('[OPEN_MODAL][CREATE] Reset create state');
+        }
+
+        // Clear any pending join state (prevents cross-flow contamination)
+        sessionStorage.removeItem('mm_pending_room');
+        sessionStorage.removeItem('mm_auto_join');
+        console.log('[OPEN_MODAL] Cleared join state, opening:', type);
+      }
+
+      // Hide all errors
+      document.querySelectorAll('.error-msg').forEach(el => el.classList.remove('show'));
+
+      backdrop.style.display = 'flex';
+      // Trigger reflow for transition
+      backdrop.offsetHeight;
+      backdrop.classList.add('open');
+
+      // Focus appropriate input
+      setTimeout(() => {
+        const inputMap = { profile: 'profile-name-input', create: 'room-name-input', join: 'join-room-input' };
+        hub$(inputMap[type])?.focus();
+      }, 300);
+    }
+
+    function closeModal(instant = false) {
+      if (!HubState.modalOpen) return;
+      
+      const type = HubState.modalOpen;
+      const backdrop = hub$(`${type}-modal-backdrop`);
+      HubState.modalOpen = null;
+
+      if (!backdrop) return;
+
+      backdrop.classList.remove('open');
+      if (instant) {
+        backdrop.style.display = 'none';
+      } else {
+        setTimeout(() => {
+          if (HubState.modalOpen === null) backdrop.style.display = 'none';
+        }, 350);
+      }
+    }
+
+    function handleBackdropClick(e, type) {
+      if (e.target.classList.contains('modal-backdrop')) closeModal();
+    }
+
+    function showInlineError(id, msg) {
+      const el = hub$(id);
+      if (el) {
+        el.textContent = msg;
+        el.classList.add('show');
+        // Auto-shake the parent modal if exists
+        const modal = el.closest('.modal-content');
+        if (modal) {
+          modal.classList.add('shake');
+          setTimeout(() => modal.classList.remove('shake'), 400);
+        }
+      }
+    }
+
+    function clearInlineError(id) {
+      const el = hub$(id);
+      if (el) el.classList.remove('show');
+    }
+
+    // ── Avatar Logic ──────────────────────────────────────────────
+    function setAvatarDisplay(imgEl, emojiEl, url) {
+      if (!imgEl || !emojiEl) return;
+      if (url && url.startsWith('/')) {
+        imgEl.src = url;
+        imgEl.style.display = 'block';
+        emojiEl.style.display = 'none';
+      } else {
+        imgEl.style.display = 'none';
+        emojiEl.style.display = '';
+        emojiEl.textContent = url || '🎧';
+      }
+    }
+
+    function buildAvatarGrid(currentAvatarUrl) {
+      const grid = hub$('avatar-img-grid');
+      if (!grid) return;
+      grid.innerHTML = '';
+      AVATAR_REGISTRY.forEach(url => {
+        const div = document.createElement('div');
+        div.className = 'avatar-img-opt' + (url === currentAvatarUrl ? ' active-avatar' : '');
+        div.innerHTML = `<img src="${url}" alt="avatar" loading="lazy">`;
+        div.onclick = () => {
+          document.querySelectorAll('.avatar-img-opt').forEach(o => o.classList.remove('active-avatar'));
+          div.classList.add('active-avatar');
+          HubState.selectedAvatarUrl = url;
+        };
+        grid.appendChild(div);
+      });
+    }
+
+    // ── Profile Logic ──────────────────────────────────────────────
+    function saveProfile() {
+      const nameInput = hub$('profile-name-input');
+      const newName = nameInput?.value.trim();
+      const errorEl = hub$('profile-error');
+      
+      errorEl.classList.remove('show');
+
+      if (!newName) {
+        showInlineError('profile-error', 'Vui lòng nhập tên hiển thị');
+        nameInput?.focus();
+        return;
+      }
+
+      const newAvatar = HubState.selectedAvatarUrl || AVATAR_REGISTRY[0];
+      _saveGuestProfile({ nickname: newName, avatar: newAvatar, updatedAt: Date.now() });
+
+      // Update UI
+      const profileName = hub$('profile-name');
+      if (profileName) profileName.textContent = newName;
+      setAvatarDisplay(hub$('profile-avatar-img'), hub$('profile-avatar-emoji'), newAvatar);
+
+      syncProfilePreviews(newName, newAvatar);
+      showToast('✅ Đã lưu profile!');
+      closeModal();
+    }
+
+    function syncProfilePreviews(name, avatarUrl) {
+      ['join', 'create'].forEach(prefix => {
+        const nameEl = hub$(`${prefix}-user-name`);
+        if (nameEl) nameEl.textContent = name;
+        setAvatarDisplay(hub$(`${prefix}-avatar-img`), hub$(`${prefix}-avatar-emoji`), avatarUrl);
+      });
+    }
+
+    function openProfileEdit() { openModal('profile'); }
+    function toggleProfileMenu() { openModal('profile'); }
+
+    // ── Create Room Logic ──────────────────────────────────────────
+    function selectMood(el) {
+      document.querySelectorAll('.mood-btn').forEach(btn => btn.classList.remove('active-mood'));
+      el.classList.add('active-mood');
+      HubState.selectedMood = el.dataset.mood || 'chill';
+    }
+
+    function setRoomType(type) {
+      HubState.isPrivate = (type === 'private');
+      const pub = hub$('public-room-btn');
+      const prv = hub$('private-room-btn');
+      const pwf = hub$('password-field');
+      
+      if (type === 'public') {
+        pub.style.background = 'linear-gradient(135deg,#8b5cf6,#ec4899)';
+        pub.style.borderColor = 'rgba(255,255,255,.15)';
+        prv.style.background = 'rgba(255,255,255,.04)';
+        prv.style.borderColor = 'rgba(255,255,255,.06)';
+        pwf.style.display = 'none';
+      } else {
+        prv.style.background = 'linear-gradient(135deg,#8b5cf6,#ec4899)';
+        prv.style.borderColor = 'rgba(255,255,255,.15)';
+        pub.style.background = 'rgba(255,255,255,.04)';
+        pub.style.borderColor = 'rgba(255,255,255,.06)';
+        pwf.style.display = 'block';
+        setTimeout(() => hub$('room-password-input')?.focus(), 100);
+      }
+    }
+
+    function handleCreateRoom() {
+      const nameInput = hub$('room-name-input');
+      const createBtn = hub$('create-room-btn');
+      const roomName = nameInput?.value.trim();
+      const profile = _getGuestProfile();
+
+      // Clear previous error state immediately
+      clearInlineError('create-error');
+
+      // Stateless validation
+      if (!roomName) {
+        showInlineError('create-error', 'Vui lòng nhập tên phòng');
+        nameInput?.focus();
+        return;
+      }
+
+      const mood = HubState.selectedMood || 'chill';
+      const isPrivate = !!HubState.isPrivate;
+      const password = hub$('room-password-input')?.value.trim();
+
+      if (isPrivate && !password) {
+        showInlineError('create-error', 'Cần đặt mật khẩu cho phòng riêng tư');
+        hub$('room-password-input')?.focus();
+        return;
+      }
+
+      // Visual lock
+      if (createBtn) {
+        createBtn.disabled = true;
+        createBtn.textContent = '⏳ Đang tạo...';
+      }
+
+      RoomLogic.createRoom({
+        username: profile.nickname,
+        roomName: roomName,
+        mood: mood,
+        isPrivate: isPrivate,
+        password: password,
+        onSuccess: ({ roomId }) => {
+          console.log('[CREATE_SUCCESS]', roomId);
+          // Perform auto-join imperatively (RoomHub is already mounted, no re-init)
+          performAutoJoin(roomId);
+        },
+        onError: (msg) => {
+          // Always reset button on error
+          if (createBtn) {
+            createBtn.disabled = false;
+            createBtn.textContent = '🚀 Tạo Không Gian';
+          }
+          if (msg.includes('tên phòng') || msg.includes('Không khí')) {
+            showInlineError('create-error', msg);
+          } else {
+            showToast(msg);
+          }
+        }
+      });
+    }
+
+    function handleJoinRoom(options = {}) {
+      const autoEnter = options.autoEnter !== false;
+      const joinInput = hub$('join-room-input');
+      const roomId = joinInput?.value.trim().toUpperCase();
+      const joinBtn = hub$('join-room-btn');
+
+      clearInlineError('join-error');
+
+      if (!roomId) {
+        showInlineError('join-error', 'Vui lòng nhập mã phòng');
+        joinInput?.focus();
+        return;
+      }
+
+      if (joinBtn) {
+        joinBtn.disabled = true;
+        joinBtn.textContent = '⏳ Đang kiểm tra...';
+      }
+
+      RoomLogic.checkAccess(roomId, {
+        onNotFound: () => {
+          showToast('❌ Không tìm thấy phòng');
+          try {
+            if (window.history.replaceState) {
+              window.history.replaceState({}, '', '/room');
+            }
+          } catch (_) {}
+          if (joinBtn) {
+            joinBtn.disabled = false;
+            joinBtn.textContent = 'Tham gia ngay';
+          }
+        },
+        onPublic: (id) => {
+          if (autoEnter) {
+            _doJoinRoom(id, '');
+          } else {
+            // [FIX] Wait for manual user confirmation (Deep-link flow)
+            if (joinBtn) {
+              joinBtn.disabled = false;
+              joinBtn.textContent = 'Tham gia ngay';
+            }
+            console.log('[JOIN_FLOW] Public room verified, waiting for manual click.');
+          }
+        },
+        onPrivate: (id) => {
+          // [FIX] STOP autoJoin() for private rooms via deep-link
+          sessionStorage.removeItem('mm_auto_join');
+          
+          // Ensure modal is open and password wrap is visible
+          openModal('join');
+          hub$('join-pw-wrap').style.display = 'block';
+          hub$('join-password-input').focus();
+
+          if (joinBtn) {
+            joinBtn.disabled = false;
+            joinBtn.textContent = '🔓 Vào với mật khẩu';
+            // Important: update onclick for the password flow
+            joinBtn.onclick = () => {
+              const pw = hub$('join-password-input').value.trim();
+              if (!pw) { showToast('Vui lòng nhập mật khẩu'); return; }
+              _doJoinRoom(id, pw);
+            };
+          }
+          showToast('🔒 Phòng riêng tư — cần mật khẩu');
+        },
+        onError: (msg) => {
+          if (joinBtn) {
+            joinBtn.disabled = false;
+            joinBtn.textContent = 'Tham gia ngay';
+          }
+          showToast(msg);
+        }
+      });
+    }
+
+    // ── Toast ─────────────────────────────────────────────────────
+    function showToast(msg) {
+      let t = hub$('hub-toast');
+      if (!t) {
+        t = document.createElement('div');
+        t.id = 'hub-toast';
+        t.style.cssText = `
+          position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(8px);
+          background:rgba(10,12,26,.95);backdrop-filter:blur(20px);
+          border:1px solid rgba(255,255,255,.12);border-radius:16px;
+          padding:.8rem 1.6rem;font-size:.9rem;color:#fff;
+          z-index:9999;transition:all .35s cubic-bezier(.23,1,.32,1);
+          opacity:0;pointer-events:none;white-space:nowrap;
+          box-shadow:0 20px 50px rgba(0,0,0,.5);
+        `;
+        document.body.appendChild(t);
+      }
+      t.textContent = msg;
+      t.style.opacity = '1';
+      t.style.transform = 'translateX(-50%) translateY(0)';
+      clearTimeout(t._timer);
+      t._timer = setTimeout(() => {
+        t.style.opacity = '0';
+        t.style.transform = 'translateX(-50%) translateY(10px)';
+      }, 3000);
+    }
+
+    function _doJoinRoom(roomId, password) {
+      const profile = _getGuestProfile();
+      const joinBtn = hub$('join-room-btn');
+
+      // Clear ALL join state before starting new join (prevent cross-contamination)
+      sessionStorage.removeItem('mm_pending_room');
+      sessionStorage.removeItem('mm_auto_join');
+      sessionStorage.removeItem('mm_deep_link_target');
+      console.log('[JOIN_FLOW] Starting join:', roomId);
+
+      // room.html is a PRIVATE internal session endpoint.
+      // It only accepts rooms via sessionStorage (mm_pending_room), never URL params.
+      // The hub validates access, so room.html trusts sessionStorage alone.
+      sessionStorage.setItem('mm_pending_room', roomId);
+      if (password) {
+        sessionStorage.setItem('mm_joinPw_' + roomId, password);
+      }
+
+      RoomLogic.joinRoom(roomId, password, {
+        username: profile.nickname,
+        onSuccess: () => {
+          console.log('[JOIN_FLOW][SUCCESS]', roomId);
+          // [FIX] Use transition for smooth entry
+          RoomTransition.to('/room.html', 'Joining room');
+        },
+        onError: (msg) => {
+          // Clear pending state on failure
+          sessionStorage.removeItem('mm_pending_room');
+          sessionStorage.removeItem('mm_auto_join');
+          if (joinBtn) {
+            joinBtn.disabled = false;
+            joinBtn.textContent = password ? '🔓 Vào với mật khẩu' : 'Tham gia ngay';
+          }
+          showToast(msg);
+          // If room doesn't exist, redirect back to hub
+          if (msg.includes('không tồn tại') || msg.includes('not found')) {
+            setTimeout(() => {
+              RoomTransition.toRoomHub();
+            }, 2000);
+          }
+          console.log('[JOIN_FLOW][ERROR]', msg);
+        }
+      });
+
+      if (joinBtn) {
+        joinBtn.disabled = true;
+        joinBtn.textContent = '⏳ Đang tham gia...';
+      }
+    }
+
+    /**
+     * performAutoJoin — imperative join from create success
+     * Goes through RoomHub gateway (/room?join=...) which:
+     * - Validates session
+     * - Opens join modal with pre-filled code
+     * - Auto-joins after short delay (since we already have username)
+     */
+    function performAutoJoin(roomId) {
+      console.log('[AUTO_JOIN][TRIGGER]', roomId);
+
+      // Clear ALL existing join state before setting new (prevent cross-contamination)
+      sessionStorage.removeItem('mm_pending_room');
+      sessionStorage.removeItem('mm_auto_join');
+      sessionStorage.removeItem('mm_deep_link_target');
+      sessionStorage.removeItem('mm_reconnect_room');
+
+      // Mark pending room so RoomHub knows to auto-join (not just open modal)
+      sessionStorage.setItem('mm_pending_room', roomId);
+      sessionStorage.setItem('mm_auto_join', '1'); // flag: skip modal, auto-join immediately
+
+      console.log('[AUTO_JOIN][STATE]', {
+        mm_pending_room: sessionStorage.getItem('mm_pending_room'),
+        mm_auto_join: sessionStorage.getItem('mm_auto_join'),
+      });
+
+      // [FIX] Navigate through transition for better UX
+      RoomTransition.to('/room.html', 'Entering room');
+    }
+
+    function initSocket() {
+      // RoomLogic handles socket initialization lazily
+      HubState.socket = RoomLogic.getSocket();
+    }
+
+    // ── Initialization ─────────────────────────────────────────────
+    function loadSavedProfile() {
+      const profile = _getGuestProfile();
+      const nameEl = hub$('profile-name');
+      if (nameEl) nameEl.textContent = profile.nickname;
+      setAvatarDisplay(hub$('profile-avatar-img'), hub$('profile-avatar-emoji'), profile.avatar);
+      syncProfilePreviews(profile.nickname, profile.avatar);
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape') closeModal();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      // Hide any lingering transition overlay from previous navigation
+      RoomTransition.hide();
+
+      // ── Deep-link Detection ─────────────────────────────────────
+      // Vercel rewrites (internal): /r/:id and /room/:id → room-hub.html?join=:id
+      // Browser URL may still show /r/ID or /room/ID without visible ?join= — parse both.
+
+      const urlParams = new URLSearchParams(window.location.search);
+      let deepLinkRoomId = urlParams.get('join');
+
+      if (!deepLinkRoomId && window.location.pathname.startsWith('/r/')) {
+        deepLinkRoomId = window.location.pathname.split('/r/')[1]?.split('/')[0];
+        console.log('[ROOMHUB][PATH_LINK] /r/ → roomId:', deepLinkRoomId);
+      }
+
+      if (!deepLinkRoomId && window.location.pathname.startsWith('/room/')) {
+        const after = window.location.pathname.slice('/room/'.length).split('/')[0];
+        if (after && /^[A-Za-z0-9]{3,}$/.test(after)) {
+          deepLinkRoomId = after;
+          console.log('[ROOMHUB][PATH_LINK] /room/:id → roomId:', deepLinkRoomId);
+        }
+      }
+
+      /** True when user landed via shareable URL (query or path) — public rooms may auto-join after check. */
+      const deepLinkFromShareUrl = Boolean(
+        urlParams.get('join') ||
+        window.location.pathname.startsWith('/r/') ||
+        (/^\/room\/[A-Za-z0-9]{3,}/.test(window.location.pathname))
+      );
+
+      const pendingRoom = sessionStorage.getItem('mm_pending_room') || '';
+      const autoJoin = sessionStorage.getItem('mm_auto_join') === '1';
+      const fromSuccess = sessionStorage.getItem('mm_deep_link_target');
+      
+      // Check if we are refreshing an active session in the SAME room
+      // Covers three cases:
+      //   1. /r/ABC123?join=ABC123 → deepLinkRoomId set, activeRoom matches
+      //   2. /r/ABC123 (replaceState cleared ?join=) → deepLinkRoomId from pathname
+      //   3. /room (direct visit after F5 cleared everything) → activeRoom alone confirms session
+      const activeRoom = sessionStorage.getItem('mm_active_room') || '';
+      const isRefresh = (deepLinkRoomId && activeRoom === deepLinkRoomId)
+                     || (!deepLinkRoomId && !pendingRoom && !autoJoin && activeRoom);
+
+      // Clean up stale markers (but keep mm_active_room for refresh stability)
+      sessionStorage.removeItem('mm_deep_link_target');
+      sessionStorage.removeItem('mm_reconnect_room');
+
+      console.log('[ROOMHUB][MOUNT] Flow state:', {
+        deepLinkRoomId,
+        pendingRoom,
+        activeRoom,
+        isRefresh,
+        autoJoin,
+      });
+
+      if (isRefresh) {
+        // Hydrate directly if it's a refresh of an active session
+        // Use activeRoom as the fallback when deepLinkRoomId is missing (Case 3: direct /room visit)
+        const restoreRoomId = deepLinkRoomId || activeRoom;
+        console.log('[ROOMHUB][REFRESH] Active session found, restoring room:', restoreRoomId);
+        sessionStorage.setItem('mm_pending_room', restoreRoomId);
+        RoomTransition.to('/room.html', 'Restoring session');
+        return;
+      }
+
+      if (deepLinkRoomId || pendingRoom) {
+        if (autoJoin) {
+          console.log('[ROOMHUB][AUTO_JOIN] Redirecting to internal session');
+          RoomTransition.to('/room.html', 'Entering room');
+        } else {
+          // External deep-link or manual entry: pre-fill join input and open modal
+          const targetId = (deepLinkRoomId || pendingRoom).toUpperCase();
+          const joinInput = hub$('join-room-input');
+          if (joinInput) joinInput.value = targetId;
+          
+          console.log('[ROOMHUB][DEEP_LINK] Opening join modal for:', targetId);
+          openModal('join');
+          
+          // Share URL: verify access; public → auto _doJoinRoom; private → password UI
+          setTimeout(() => handleJoinRoom({ autoEnter: deepLinkFromShareUrl }), 150);
+        }
+      }
+
+      // Enter keys
+      const bindEnter = (id, fn) => hub$(id)?.addEventListener('keydown', e => e.key === 'Enter' && fn());
+      
+      // Auto-clear error on input
+      const bindAutoClear = (inputId, errorId) => {
+        hub$(inputId)?.addEventListener('input', () => clearInlineError(errorId));
+      };
+
+      bindEnter('join-room-input', handleJoinRoom);
+      bindEnter('join-password-input', () => hub$('join-room-btn').click());
+      bindEnter('room-name-input', handleCreateRoom);
+      bindEnter('profile-name-input', saveProfile);
+      bindEnter('room-password-input', handleCreateRoom);
+
+      bindAutoClear('join-room-input', 'join-error');
+      bindAutoClear('join-password-input', 'join-error');
+      bindAutoClear('room-name-input', 'create-error');
+      bindAutoClear('room-password-input', 'create-error');
+      bindAutoClear('profile-name-input', 'profile-error');
+
+      loadSavedProfile();
+      initSocket();
+    });
+
+  </script>
+
+</body>
+</html>

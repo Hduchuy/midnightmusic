@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Midnight Mood - Tập trung và Thư giãn</title>
+  <link rel="icon"
+    href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🌙</text></svg>">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Poppins:wght@400;500;600;700&family=Coiny&family=Caveat:wght@500;600;700&family=Kalam:wght@400;700&family=Patrick+Hand&display=swap"
+    rel="stylesheet">
+
+  <link rel="stylesheet" href="/css/main.css?v=20260509_3">
+  <link rel="stylesheet" href="/css/ui.css?v=20260509_3">
+  <link rel="stylesheet" href="/css/player.css?v=20260509_3">
+  <link rel="stylesheet" href="/css/weather.css?v=20260509_3">
+  <link rel="stylesheet" href="/css/todo.css?v=20260509_3">
+  <link rel="stylesheet" href="/css/sticky.css?v=20260509_3">
+  <link rel="stylesheet" href="/css/animations.css?v=20260509_3">
+  <link rel="stylesheet" href="/css/transition.css?v=20260512_4">
+  <link rel="stylesheet" href="/css/responsive.css?v=20260509_3">
+</head>
+
+<body>
+
+  <div id="bg"></div>
+  <canvas id="stars"></canvas>
+  <canvas id="rain"></canvas>
+  <canvas id="bubbles"></canvas>
+  <canvas id="leaves"></canvas>
+  <canvas id="meteors"></canvas>
+  <div id="sticky-layer"></div>
+  <div id="sleep-decor">
+    <div class="moon"></div>
+    <div class="cloud cloud1"></div>
+    <div class="cloud cloud2"></div>
+  </div>
+
+  <div id="study-decor">
+    <div class="book-wrap">
+      <div class="book">
+        <div class="page left-page"></div>
+        <div class="page right-page"></div>
+        <div class="page-flip"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="weather-badge">
+    <div id="weather-main">
+      <span id="wx-icon">🌙</span>
+      <span id="wx-temp">--°C</span>
+      <span id="wx-condition">--</span>
+    </div>
+    <div id="weather-details">
+      <div class="wx-detail" title="Độ ẩm"><span>💧</span><span id="wx-humidity">--%</span></div>
+      <div class="wx-detail" title="Tốc độ gió"><span>🌬️</span><span id="wx-wind">--km/h</span></div>
+    </div>
+    <div id="weather-location">Đang tải...</div>
+  </div>
+
+  <div id="welcome">
+    <div id="welcome-branding" class="welcome-branding">
+      <a href="https://ictu.edu.vn" target="_blank" aria-label="ICTU website">
+        <img src="/assets/images/logoictu.png" alt="ICTU Logo">
+      </a>
+      <div id="ictu-signature" aria-label="ICTU signature">
+        <div class="ictu-main">ICTU</div>
+        <div class="ictu-sub">Trường Đại học Công nghệ Thông tin và Truyền thông</div>
+      </div>
+    </div>
+
+    <div id="welcome-hero">
+      <div class="welcome-title">Midnight Mood</div>
+      <div class="welcome-sub">Hôm nay bạn muốn mood nào?</div>
+
+
+
+      <div class="mood-grid">
+        <button class="mood-btn" data-action="select-mood" data-mood="sad">🌧 Sad</button>
+        <button class="mood-btn" data-action="select-mood" data-mood="happy">☀ Happy</button>
+        <button class="mood-btn" data-action="select-mood" data-mood="chill">🌙 Chill</button>
+        <button class="mood-btn" data-action="select-mood" data-mood="sleep">✨ Sleep</button>
+        <button class="mood-btn" data-action="select-mood" data-mood="study">📚 Study</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="app">
+
+    <div id="topbar">
+      <div class="brand">midnight mood</div>
+
+      <div class="topbar-right">
+        <button class="icon-btn" data-action="open-panel" data-panel="mood-panel"
+          aria-label="Open mood panel">🎭</button>
+        <button class="icon-btn" data-action="open-panel" data-panel="focus-panel"
+          aria-label="Open focus panel">⏱</button>
+        <button class="icon-btn" data-action="open-panel" data-panel="todo-panel"
+          aria-label="Open todo panel">📝</button>
+        <button class="icon-btn" data-action="open-panel" data-panel="music-panel"
+          aria-label="Open music panel">🎵</button>
+        <!-- Redirect to RoomHub with transition effect -->
+        <button class="icon-btn" id="roomhub-btn"
+          aria-label="Open RoomHub"
+          onclick="RoomTransition.toRoomHub()"
+          onmouseover="RoomTransition.preload('/room')">👥</button>
+      </div>
+    </div>
+
+    <div id="center">
+
+      <div id="mood-chip">🌙 chill</div>
+
+      <div id="live-clock">00:00:00</div>
+
+      <div id="focus-ring-wrap">
+        <div id="focus-time">25:00</div>
+      </div>
+
+      <div id="quote-wrap">
+        <div id="quote-en">"Focus is a superpower."</div>
+        <div id="quote-vi">Tập trung là siêu năng lực.</div>
+      </div>
+
+    </div>
+
+    <div id="bottom">
+
+      <div id="player">
+
+        <div class="track-info">
+          <div class="song-title" id="song-title">Chill Night</div>
+          <div class="song-mood" id="song-mood">mood: chill</div>
+        </div>
+
+        <div class="progress-wrap">
+          <input type="range" id="music-progress" min="0" max="100" step="0.01" value="0">
+
+          <div class="time-row">
+            <span id="current-time">0:00</span>
+            <span id="duration-time">0:00</span>
+          </div>
+        </div>
+
+        <div class="player-controls">
+          <button class="ctrl-btn prev" data-player-action="prev" aria-label="Previous track">⏮</button>
+          <button class="ctrl-btn play" id="play-btn" data-player-action="play" aria-label="Play or pause">▶</button>
+          <button class="ctrl-btn next" data-player-action="next" aria-label="Next track">⏭</button>
+          <button class="ctrl-btn library" data-action="open-panel" data-panel="library-panel" aria-label="Music Mood Library">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+          </button>
+          <button class="ctrl-btn volume" id="volume-btn" data-player-action="volume"
+            aria-label="Mute or unmute"></button>
+          <button class="ctrl-btn minimize" id="player-toggle" data-player-action="minimize"
+            aria-label="Minimize player"></button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
+  <div id="visualizer"></div>
+
+  <div class="side-panel" id="mood-panel">
+    <div class="panel-header">
+      <div class="panel-title">Mood</div>
+      <button class="panel-close" data-action="close-panel" data-panel="mood-panel" aria-label="Close panel">✕</button>
+    </div>
+
+    <button class="small-btn" data-action="select-mood" data-mood="sad">🌧 Sad</button>
+    <button class="small-btn" data-action="select-mood" data-mood="happy">☀ Happy</button>
+    <button class="small-btn" data-action="select-mood" data-mood="chill">🌙 Chill</button>
+    <button class="small-btn" data-action="select-mood" data-mood="sleep">✨ Sleep</button>
+    <button class="small-btn" data-action="select-mood" data-mood="study">📚 Study</button>
+  </div>
+
+  <div class="side-panel" id="focus-panel">
+    <div class="panel-header">
+      <div class="panel-title">Focus Mode</div>
+      <button class="panel-close" data-action="close-panel" data-panel="focus-panel" aria-label="Close panel">✕</button>
+    </div>
+
+    <div class="focus-panel-subtitle">Bắt đầu một phiên tập trung sâu</div>
+
+    <div class="focus-input-wrapper">
+      <span class="focus-input-icon">⏱</span>
+      <input type="number" id="focus-min" placeholder="Nhập phút tập trung...">
+    </div>
+
+    <div class="focus-presets">
+      <button class="focus-preset-btn" data-action="set-focus-preset" data-preset="5">5P</button>
+      <button class="focus-preset-btn" data-action="set-focus-preset" data-preset="15">15P</button>
+      <button class="focus-preset-btn" data-action="set-focus-preset" data-preset="30">30P</button>
+      <button class="focus-preset-btn" data-action="set-focus-preset" data-preset="60">1H</button>
+    </div>
+
+    <button class="focus-start-btn" id="start-focus-btn" data-action="start-focus">Bắt đầu tập trung</button>
+  </div>
+
+  <div class="side-panel" id="todo-panel">
+    <div class="todo-header">
+      <div class="todo-header-left">
+        <span class="todo-header-icon">📋</span>
+        <span class="todo-header-title">Todo</span>
+      </div>
+      <button class="panel-close" data-action="close-panel" data-panel="todo-panel" aria-label="Close panel">✕</button>
+    </div>
+
+    <div class="todo-tabs">
+      <button class="todo-tab active" data-todo-tab="tasks">Công việc</button>
+      <button class="todo-tab" data-todo-tab="notes">StickyNote</button>
+    </div>
+
+    <div class="todo-content">
+      <div class="todo-tab-content" id="todo-tasks-content">
+        <div class="todo-form-section">
+          <div class="todo-input-wrapper">
+            <input type="text" id="todo-input" class="todo-input-main" placeholder="Bạn cần làm gì hôm nay?">
+          </div>
+          <div class="todo-form-row">
+            <input type="date" id="todo-date" class="todo-date-input">
+            <input type="time" id="todo-time" class="todo-time-input">
+          </div>
+          <div class="todo-form-row-actions">
+            <label class="todo-note-toggle" id="todo-note-toggle">
+              <input type="checkbox" id="todo-create-note">
+              <span class="todo-switch"></span>
+              <span>StickyNote</span>
+            </label>
+            <button class="todo-add-btn" data-action="add-todo">
+              <span class="todo-add-btn-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+                  stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19"></line>
+                  <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+              </span>
+              <span>Thêm</span>
+            </button>
+          </div>
+          <div class="todo-note-form" id="todo-note-form">
+            <textarea id="todo-note-content" class="todo-note-textarea"
+              placeholder="Viết ghi chú của bạn..."></textarea>
+            <div class="todo-note-preview">
+              <div class="todo-note-size">
+                <button class="todo-size-btn active" data-size="s">S</button>
+                <button class="todo-size-btn" data-size="m">M</button>
+                <button class="todo-size-btn" data-size="l">L</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="todo-tasks-container">
+          <!-- Tasks will be rendered here -->
+        </div>
+      </div>
+
+      <div class="todo-tab-content" id="todo-notes-content" style="display:none;">
+        <div class="sticky-manager" id="sticky-manager">
+          <div class="sticky-manager-header">
+            <span class="sticky-manager-title">StickyNote của bạn</span>
+            <span class="sticky-manager-count" id="sticky-count">0 notes</span>
+          </div>
+          <div class="sticky-manager-search">
+            <input type="text" id="sticky-search" placeholder="Tìm kiếm StickyNote...">
+          </div>
+          <div class="sticky-manager-filters">
+            <button class="sticky-filter-btn active" data-filter="all">Tất cả</button>
+          </div>
+          <div class="sticky-notes-list" id="sticky-notes-list">
+            <!-- Notes will be rendered here -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="side-panel" id="music-panel">
+    <!-- Sticky Header Wrapper -->
+    <div class="music-panel-top">
+      <div class="panel-header">
+        <div class="panel-title">SoundCloud</div>
+        <button class="panel-close" data-action="close-panel" data-panel="music-panel"
+          aria-label="Close panel">✕</button>
+      </div>
+      <!-- Mini Now-Playing Bar -->
+      <div id="soundcloud-status" class="sc-now-playing">
+        <span class="sc-now-playing-icon">☁</span>
+        <span class="sc-now-playing-text" id="sc-status-text">SoundCloud chưa hoạt động</span>
+        <div class="sc-now-playing-waveform">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Scrollable Content -->
+    <div class="music-panel-scroll">
+
+      <!-- Paste Section -->
+      <div class="sc-paste-section">
+        <div class="sc-section-title">SoundCloud URL / Playlist</div>
+        <input type="text" id="soundcloud-input" placeholder="Paste SoundCloud URL tại đây...">
+        <div class="sc-paste-actions">
+          <button class="small-btn sc-primary-btn" data-action="play-soundcloud">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"></path>
+              <path d="M12 15V9"></path>
+              <path d="m9 12 3-3 3 3"></path>
+            </svg>
+            Phát SoundCloud
+          </button>
+          <button class="small-btn sc-primary-btn" data-action="exit-soundcloud">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+            </svg>
+            Quay lại nhạc mood
+          </button>
+        </div>
+        <div class="sc-paste-hint">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <path
+              d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.9 1.2 1.5 1.5 2.5">
+            </path>
+            <path d="M9 18h6"></path>
+            <path d="M10 22h4"></path>
+          </svg>
+          Dán link bài hát, playlist hoặc track SoundCloud để phát.
+        </div>
+      </div>
+
+      <!-- Search Section -->
+      <div class="sc-search-section">
+        <div class="sc-section-title">Tìm nhạc SoundCloud</div>
+        <div class="sc-search-wrap">
+          <div class="sc-input-icon-wrap">
+            <svg class="sc-input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="sc-search-input" placeholder="Tìm bài hát, nghệ sĩ, từ khóa...">
+          </div>
+          <button class="small-btn sc-search-btn-square sc-primary-btn" id="sc-search-btn"
+            data-action="search-soundcloud" aria-label="Tìm kiếm">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
+              stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+          </button>
+        </div>
+
+        <div id="sc-search-empty" class="sc-empty-state-wrap">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" style="margin-bottom:8px;opacity:0.5">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <div>Tìm bài hát, nghệ sĩ hoặc từ khóa...</div>
+        </div>
+
+        <div id="sc-search-results" class="sc-search-results hidden"></div>
+
+        <div id="sc-search-footer" class="sc-search-footer hidden">
+          <button id="sc-search-refresh-btn" class="sc-refresh-btn" data-action="refresh-soundcloud-search"
+            aria-label="Làm mới kết quả">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+              stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"></path>
+              <path d="M3 3v5h5"></path>
+            </svg>
+            Làm mới kết quả
+          </button>
+          <div class="sc-footer-count">
+            <span id="sc-search-count-text">Hiển thị 5 kết quả</span>
+          </div>
+        </div>
+
+        <div class="sc-paste-hint" style="margin-top: 12px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M12 16v-4"></path>
+            <path d="M12 8h.01"></path>
+          </svg>
+          Tự động chuyển bài hoạt động ổn định nhất khi bạn giữ nguyên tab và sử dụng trình duyệt trên máy tính.
+        </div>
+      </div>
+
+      <!-- Recommended -->
+      <div class="sc-reco-wrap">
+        <div class="sc-section-title">Playlist đề xuất</div>
+        <div id="sc-reco-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="side-panel" id="library-panel">
+    <div class="music-panel-top">
+      <div class="panel-header">
+        <div class="panel-title">Music Mood</div>
+        <button class="panel-close" data-action="close-panel" data-panel="library-panel" aria-label="Close panel">✕</button>
+      </div>
+      <!-- Mini Now-Playing Bar -->
+      <div id="library-status" class="sc-now-playing">
+        <span class="sc-now-playing-icon">🎵</span>
+        <span class="sc-now-playing-text" id="library-status-text">Chưa phát nhạc</span>
+        <div class="sc-now-playing-waveform" id="library-waveform" style="display: none;">
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="library-toolbar">
+      <div class="library-search-wrap">
+        <input type="text" id="library-search" placeholder="Tìm bài hát, nghệ sĩ...">
+      </div>
+      <div class="library-filter" id="library-filter">
+        <!-- JS dynamically fills this based on manifest -->
+      </div>
+    </div>
+
+    <div class="library-list custom-scroll" id="library-list">
+      <!-- Tracks will be rendered here -->
+    </div>
+  </div>
+
+  <!-- [DEPRECATED_HOMEPAGE_ROOM_PANEL] 
+       Multiplayer logic has moved to /room (RoomHub). 
+       Keeping these DOM elements commented out for rollback safety.
+  
+  <div class="side-panel" id="room-panel">
+    ... (legacy content) ...
+  </div>
+
+  <div class="pw-modal-backdrop" id="pw-modal-backdrop">
+    ... (legacy content) ...
+  </div>
+  -->
+
+  <div id="notif"></div>
+  <audio id="audio"></audio>
+
+  <div id="todo-reminder" aria-live="assertive">
+    <div class="todo-reminder-card">
+      <div class="todo-reminder-title">Nhắc việc</div>
+      <div id="todo-reminder-text"></div>
+      <div id="todo-reminder-time"></div>
+      <div class="todo-reminder-actions">
+        <button class="small-btn" data-action="todo-complete-from-reminder">Đã hoàn thành</button>
+        <button class="small-btn" data-action="todo-open-snooze">Nhắc lại sau</button>
+      </div>
+      <div class="todo-snooze-row" id="todo-snooze-row">
+        <button class="small-btn" data-action="todo-snooze" data-minutes="5">+5 phút</button>
+        <button class="small-btn" data-action="todo-snooze" data-minutes="10">+10 phút</button>
+        <button class="small-btn" data-action="todo-snooze" data-minutes="30">+30 phút</button>
+      </div>
+    </div>
+  </div>
+
+  <section id="soundcloud-stage" aria-live="polite">
+    <div class="sc-stage-head">
+      <img id="sc-stage-thumb" alt="SoundCloud artwork" />
+      <div>
+        <div id="sc-stage-title">SoundCloud</div>
+        <div id="sc-stage-sub">Đang phát bằng SoundCloud</div>
+      </div>
+      <button class="small-btn" id="sc-stage-exit" data-action="exit-soundcloud">Thoát</button>
+    </div>
+    <div id="soundcloud-player"></div>
+  </section>
+
+  <script src="/assets/audio/manifest.js?v=1778337044334"></script>
+  <script src="/data/moods.js?v=20260509_1"></script>
+  <script src="/data/songs.js?v=20260509_1"></script>
+  <script src="/data/quotes.js?v=20260509_1"></script>
+  <script src="/js/config.js?v=20260509_1"></script>
+  <script src="/js/quotes.js?v=20260509_1"></script>
+  <script src="/js/utils.js?v=20260509_1"></script>
+  <script src="/js/storage.js?v=20260509_1"></script>
+  <script src="/js/mood-manager.js?v=20260509_1"></script>
+  <script src="/js/weather.js?v=20260514_geo"></script>
+  <script src="/js/todo.js?v=20260509_1"></script>
+  <script src="/js/sticky.js?v=20260509_1"></script>
+  <script src="/js/focus.js?v=20260509_1"></script>
+  <script src="https://w.soundcloud.com/player/api.js"></script>
+  <script src="/js/soundcloud-api.js?v=20260509_1"></script>
+  <script src="/js/soundcloud-ui.js?v=20260509_1"></script>
+  <script src="/js/soundcloud.js?v=20260509_1"></script>
+  <script src="/js/visualizer.js?v=20260509_1"></script>
+  <script src="/js/player.js?v=20260509_1"></script>
+  <script src="/js/local-music.js?v=20260509_1"></script>
+  <!-- [DEPRECATED] room-logic.js lives only in room-server/js/ (ESM boundary) -->
+  <!-- socket.io lives only in room-server (Room runtime only) -->
+  <script src="/js/transition.js?v=20260512_4"></script>
+  <script src="/js/app.js?v=20260509_1"></script>
+
+</body>
+
+</html>

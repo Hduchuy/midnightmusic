@@ -1,0 +1,112 @@
+/**
+ * css/avatar-picker.css
+ * Avatar grid picker — cozy, minimal, lofi aesthetic.
+ * Matches project's dark glassmorphism style.
+ */
+
+/* ── Avatar grid container ── */
+.avatar-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(60px, 1fr));
+  gap: 10px;
+  padding: 4px 0;
+}
+
+/* ── Single avatar item ── */
+.avatar-picker-item {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 12px;
+  overflow: hidden;
+  cursor: pointer;
+  border: 2px solid transparent;
+  background: rgba(255, 255, 255, 0.04);
+  transition:
+    border-color 0.2s ease,
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    box-shadow 0.2s ease;
+  outline: none;
+}
+
+.avatar-picker-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 10px;
+}
+
+/* ── Hover: subtle glow ── */
+.avatar-picker-item:hover {
+  transform: scale(1.06);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: 0 0 14px rgba(156, 183, 255, 0.18);
+}
+
+/* ── Selected: purple ring + glow ── */
+.avatar-picker-item.selected {
+  border-color: #9cb7ff;
+  box-shadow:
+    0 0 0 1px rgba(156, 183, 255, 0.4),
+    0 0 18px rgba(156, 183, 255, 0.3);
+  transform: scale(1.06);
+}
+
+/* ── Checkmark overlay on selected ── */
+.avatar-picker-item.selected::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 14px;
+  height: 14px;
+  background: #9cb7ff;
+  border-radius: 50%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='8' height='8' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 8px;
+}
+
+/* ── Focus state for keyboard nav ── */
+.avatar-picker-item:focus-visible {
+  border-color: rgba(156, 183, 255, 0.5);
+  box-shadow: 0 0 0 2px rgba(156, 183, 255, 0.3);
+}
+
+/* ── Responsive ── */
+@media (max-width: 480px) {
+  .avatar-picker-grid {
+    grid-template-columns: repeat(auto-fill, minmax(52px, 1fr));
+    gap: 8px;
+  }
+  .avatar-picker-item {
+    border-radius: 10px;
+  }
+  .avatar-picker-item img {
+    border-radius: 8px;
+  }
+}
+
+/* ── Mini avatar (for display, not picker) ── */
+.avatar-mini {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1.5px solid rgba(255, 255, 255, 0.12);
+  flex-shrink: 0;
+  vertical-align: middle;
+}
+
+.avatar-mini.avatar-mini--sm {
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
+}
+
+.avatar-mini.avatar-mini--lg {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+}

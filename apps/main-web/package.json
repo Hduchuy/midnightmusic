@@ -1,0 +1,9 @@
+{
+  "name": "midnightmusic-main-web",
+  "version": "1.0.0",
+  "description": "Midnight Music - Main Web (Vercel Static)",
+  "private": true,
+  "scripts": {
+    "dev": "npx serve . -l 3000"
+  }
+}
