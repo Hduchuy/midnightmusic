@@ -262,6 +262,9 @@ function applyAuthoritativeTrackChange(room, track, trackIndex, {
   room.state.lastTrackChangeAt = Date.now();
   room.updatedAt = Date.now();
 
+  // Exit idle when a track starts
+  room.isIdle = false;
+
   // Store authoritative action for multi-controller scenarios
   room.state.lastAuthoritativeAction = {
     actionId: room.state.lastActionId,
@@ -392,6 +395,7 @@ io.on('connection', (socket) => {
         controllerIds: [],         // Danh sách user có quyền điều khiển
       },
       playlist:  [],
+      isIdle:    false,   // true when playlist exhausted — room still alive
     });
 
     console.log(`[room] created id=${roomId} hostSocket=${socket.id} hostName=${hostName} mood=${mood || 'chill'} private=${!!isPrivate} activeRooms=${rooms.size}`);
@@ -421,10 +425,10 @@ io.on('connection', (socket) => {
   });
 
   // ── JOIN ROOM ─────────────────────────────────────────────
-  socket.on('join-room', ({ roomId: rawId, name, password, hostToken, avatar, clientId }) => {
+  socket.on('join-room', ({ roomId: rawId, name, password, hostToken, avatar, clientId, profile }) => {
     const roomId = sanitizeRoomId(rawId);
 
-    console.log(`[JOIN][REQUEST] rawRoomId=${rawId} sanitizedRoomId=${roomId} socket=${socket.id} user=${sanitizeText(name || 'Guest', 30)} clientId=${clientId || '(none)'} hasToken=${!!hostToken}`);
+    console.log(`[JOIN][REQUEST] rawRoomId=${rawId} sanitizedRoomId=${roomId} socket=${socket.id} user=${sanitizeText(name || 'Guest', 30)} clientId=${clientId || '(none)'} hasToken=${!!hostToken} hasProfile=${!!profile}`);
     console.log(`[JOIN][DEBUG] activeRooms=${[...rooms.keys()].join(',') || '(empty)'}`);
 
     if (!roomId || !rooms.has(roomId)) {
@@ -457,16 +461,22 @@ io.on('connection', (socket) => {
     const safeName = sanitizeText(name || 'Guest', 30);
     const safeAvatar = typeof avatar === 'string' && avatar.length > 0 ? avatar : '';
 
+    // ── Full profile (sent by client) ───────────────────────────────────
+    // profile may come from client as { nickname, avatar } or be undefined
+    const profileNickname = profile?.nickname ? sanitizeText(profile.nickname, 30) : safeName;
+    const profileAvatar   = typeof profile?.avatar === 'string' && profile.avatar.length > 0 ? profile.avatar : safeAvatar;
+
     // ── clientId deduplication ───────────────────────────────────────────
     // Same clientId = same browser. Update existing member's socket.id
     // instead of creating a duplicate. This prevents "Guest_ui" appearing twice.
     let isReconnect = false;
+    const memberProfile = { id: socket.id, name: profileNickname, avatar: profileAvatar, clientId };
     if (clientId) {
       for (const [existingSocketId, memberData] of room.members.entries()) {
         if (memberData.clientId === clientId && existingSocketId !== socket.id) {
-          console.log(`[JOIN][CLIENTID_MATCH] room=${roomId} oldSocket=${existingSocketId} newSocket=${socket.id} user=${safeName} clientId=${clientId}`);
+          console.log(`[JOIN][CLIENTID_MATCH] room=${roomId} oldSocket=${existingSocketId} newSocket=${socket.id} user=${profileNickname} clientId=${clientId}`);
           room.members.delete(existingSocketId);
-          room.members.set(socket.id, { id: socket.id, name: safeName, avatar: safeAvatar, clientId });
+          room.members.set(socket.id, memberProfile);
           isReconnect = true;
           break;
         }
@@ -493,12 +503,12 @@ io.on('connection', (socket) => {
     socket.join(roomId);
 
     if (!isReconnect) {
-      room.members.set(socket.id, { id: socket.id, name: safeName, avatar: safeAvatar, clientId: clientId || null });
+      room.members.set(socket.id, { id: socket.id, name: profileNickname, avatar: profileAvatar, clientId: clientId || null });
     }
     room.updatedAt = Date.now();
     socket.roomId = roomId;
 
-    console.log(`[room] joined id=${roomId} socket=${socket.id} user=${safeName} isHost=${isHost} members=${room.members.size} reconnect=${isReconnect} video=${room.state.currentVideoId}`);
+    console.log(`[room] joined id=${roomId} socket=${socket.id} user=${profileNickname} isHost=${isHost} members=${room.members.size} reconnect=${isReconnect} video=${room.state.currentVideoId}`);
     console.log(`[JOIN][OK] room=${roomId} socket=${socket.id} playing=${room.state.isPlaying} time=${room.state.currentTime} v=${room.state.trackVersion} playlistLen=${room.playlist.length}`);
 
     socket.emit('joined-room', {
@@ -510,7 +520,10 @@ io.on('connection', (socket) => {
       members:  Array.from(room.members.values()),
       playlist: room.playlist,
       serverTime: Date.now(),
-      controllerIds: room.state.controllerIds
+      controllerIds: room.state.controllerIds,
+      isIdle:    room.isIdle || false,
+      // Send back the user's own authoritative profile so they always have it
+      myProfile: { id: socket.id, name: profileNickname, avatar: profileAvatar, clientId },
     });
 
     // On any join, broadcast authoritative members list to EVERYONE (including reconnectors).
@@ -591,6 +604,25 @@ io.on('connection', (socket) => {
       console.log(`[TRACK][SET_FIRST] room=${roomId} index=${payload.currentTrackIndex} video=${payload.currentVideoId} v=${payload.trackVersion}`);
       io.to(roomId).emit('track-changed', payload);
     }
+
+    // ── IDLE RECOVERY: If room is idle and new track added, auto-play it ──
+    if (room.isIdle && room.playlist.length > 0) {
+      const firstTrack = room.playlist[room.playlist.length - 1]; // most recently added
+      room.isIdle = false;
+      console.log(`[PLAYLIST][IDLE_RECOVER] room=${roomId} was idle, auto-playing added track id=${firstTrack.id}`);
+
+      // Find its index in the playlist
+      const trackIdx = room.playlist.findIndex(t => t.id === firstTrack.id);
+
+      applyAuthoritativeTrackChange(room, firstTrack, trackIdx >= 0 ? trackIdx : 0, {
+        actionSource: 'idle-recover',
+        currentTime: 0,
+        isPlaying: true,
+      });
+
+      const payload = buildTrackChangedPayload(room);
+      io.to(roomId).emit('track-changed', payload);
+    }
   });
 
   // ── REMOVE FROM PLAYLIST ────────────────────────────────────
@@ -638,8 +670,12 @@ io.on('connection', (socket) => {
         room.state.lastTrackChangeAt = Date.now();
         room.updatedAt = Date.now();
 
+        // Enter idle state when playlist becomes empty
+        room.isIdle = true;
+
         io.to(roomId).emit('playlist-updated', room.playlist);
         io.to(roomId).emit('track-changed', buildTrackChangedPayload(room));
+        io.to(roomId).emit('room-idle', { isIdle: true, playlistEnded: true });
         return;
       }
 
@@ -755,7 +791,29 @@ io.on('connection', (socket) => {
 
     if (!nextTrack) {
       console.log(`[TRACK][SKIP] room=${roomId} action=${action} reason=no_target_track`);
+      // ── PLAYLIST ENDED ─────────────────────────────────────────────────
+      // Playlist exhausted — enter idle state.
+      // Room stays alive; socket/sync/chat/members continue as normal.
+      if (!room.isIdle) {
+        room.isIdle = true;
+        room.state.currentVideoId = null;
+        room.state.currentTrackId = null;
+        room.state.currentTrackIndex = -1;
+        room.state.isPlaying = false;
+        room.state.currentTime = 0;
+        room.state.trackVersion = (room.state.trackVersion || 0) + 1;
+        room.state.syncedAt = Date.now();
+        room.updatedAt = Date.now();
+        console.log(`[PLAYLIST][ENDED] room=${roomId} → isIdle=true`);
+        io.to(roomId).emit('room-idle', { isIdle: true, playlistEnded: true });
+      }
       return;
+    }
+
+    // Exiting idle when a new track is selected
+    if (room.isIdle) {
+      console.log(`[PLAYLIST][RECOVER] room=${roomId} exiting idle, playing track ${nextTrack.id}`);
+      room.isIdle = false;
     }
 
     // Deduplication: nếu cùng track thì bỏ qua
@@ -889,7 +947,7 @@ io.on('connection', (socket) => {
   // ── HEARTBEAT ─────────────────────────────────────────────
   // Heartbeat dùng để: room alive, server state persistence
   // KHÔNG dùng để chase playback liên tục
-  socket.on('room-heartbeat', (time) => {
+  socket.on('room-heartbeat', (payload) => {
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) return;
     const room = rooms.get(roomId);
@@ -902,16 +960,45 @@ io.on('connection', (socket) => {
       return;
     }
 
-    console.log(`[HEARTBEAT][REQUEST] room=${roomId} socket=${socket.id} user=${room.members.get(socket.id)?.name || 'unknown'} currentVideo=${room.state.currentVideoId} time=${time} playing=${room.state.isPlaying} version=${room.state.trackVersion} actionId=${room.state.lastActionId}`);
+    // Support both old (number) and new (object) payload formats
+    const time    = typeof payload === 'object' ? payload?.time    : payload;
+    const isIdle  = typeof payload === 'object' ? payload?.isIdle  : false;
+
+    console.log(`[HEARTBEAT][REQUEST] room=${roomId} socket=${socket.id} user=${room.members.get(socket.id)?.name || 'unknown'} currentVideo=${room.state.currentVideoId} time=${time} playing=${room.state.isPlaying} version=${room.state.trackVersion} actionId=${room.state.lastActionId} isIdle=${isIdle}`);
 
     // Update server-side state với timestamp
-    room.state.currentTime = time;
+    room.state.currentTime = Number.isFinite(time) ? time : room.state.currentTime;
     room.state.syncedAt    = Date.now();
     room.updatedAt         = Date.now();
 
     // KHÔNG broadcast heartbeat thường xuyên nữa
     // Chỉ gửi khi: join, reconnect, host migration
     // Client tự playback mà không cần chase heartbeat
+  });
+
+  // ── OVERLAY RESYNC: guest requests authoritative state after re-enabling overlay ──
+  socket.on('request-room-state', () => {
+    const roomId = socket.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+
+    const payload = {
+      currentVideoId:      room.state.currentVideoId,
+      currentTrackId:      room.state.currentTrackId,
+      currentTrackIndex:   room.state.currentTrackIndex,
+      trackVersion:        room.state.trackVersion,
+      isPlaying:           room.state.isPlaying,
+      currentTime:         room.state.currentTime,
+      syncedAt:            room.state.syncedAt,
+      lastTrackChangeAt:   room.state.lastTrackChangeAt || 0,
+      lastActionId:        room.state.lastActionId || 0,
+      lastAuthoritativeAction: room.state.lastAuthoritativeAction || null,
+      syncType: 'overlay_resync',
+      forceHardSync: true,
+    };
+
+    console.log(`[SYNC][REQUEST_ROOM_STATE] room=${roomId} socket=${socket.id} → overlay_resync`);
+    socket.emit('playback-state', payload);
   });
 
   // ── SERVER-SIDE PERIODIC SYNC (reconnect/stale recovery ONLY) ──────
@@ -924,7 +1011,6 @@ io.on('connection', (socket) => {
     const now = Date.now();
     for (const [roomId, room] of rooms.entries()) {
       if (room.members.size < 1) continue;
-      if (!room.state.currentVideoId) continue;
 
       // Chỉ gửi periodic state cho reconnect recovery
       // KHÔNG force sync currentTime
@@ -940,11 +1026,12 @@ io.on('connection', (socket) => {
         lastTrackChangeAt: room.state.lastTrackChangeAt || 0,
         lastActionId: room.state.lastActionId || 0,
         lastAuthoritativeAction: room.state.lastAuthoritativeAction || null,
+        isIdle: room.isIdle || false,
         syncType: 'periodic_recovery', // Chỉ dùng để recovery, không phải drift correction
       };
 
       io.to(roomId).emit('playback-state', payload);
-      console.log(`[SYNC][PERIODIC_RECOVERY] room=${roomId} video=${payload.currentVideoId} playing=${payload.isPlaying} actionId=${payload.lastActionId}`);
+      console.log(`[SYNC][PERIODIC_RECOVERY] room=${roomId} video=${payload.currentVideoId} playing=${payload.isPlaying} actionId=${payload.lastActionId} isIdle=${payload.isIdle}`);
     }
   }, 60000); // 60s - chỉ để keep alive và recovery
 
@@ -1022,7 +1109,32 @@ io.on('connection', (socket) => {
     });
   });
 
-  // ── DISCONNECT ────────────────────────────────────────────
+  // ── PROFILE UPDATE ──────────────────────────────────────
+  // When a user updates their profile (from Room Hub or room), broadcast to all.
+  socket.on('profile-update', (payload) => {
+    const roomId = socket.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+
+    const profileNickname = payload?.nickname ? sanitizeText(payload.nickname, 30) : '';
+    const profileAvatar   = typeof payload?.avatar === 'string' && payload.avatar.length > 0 ? payload.avatar : '';
+
+    // Update member record
+    const member = room.members.get(socket.id);
+    if (member) {
+      if (profileNickname) member.name = profileNickname;
+      if (profileAvatar)   member.avatar = profileAvatar;
+      console.log(`[PROFILE_UPDATE] room=${roomId} socket=${socket.id} name=${profileNickname} avatar=${profileAvatar}`);
+    }
+
+    // Broadcast to all clients in the room
+    io.to(roomId).emit('profile-updated', {
+      id:      socket.id,
+      name:    profileNickname,
+      avatar:  profileAvatar,
+      clientId: payload?.clientId || member?.clientId || null,
+    });
+  });
   socket.on('disconnect', (reason) => {
     const roomId = socket.roomId;
     if (!roomId || !rooms.has(roomId)) {

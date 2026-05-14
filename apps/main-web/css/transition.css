@@ -442,7 +442,7 @@
    Accessibility - minimal or no animation
    ═══════════════════════════════════════════════════════════ */
 
-@media (prefers-reduced-motion: reduce) {
+@media (prefers-reduced-motion: reduce), (max-width: 768px) {
   .transition-glow,
   .transition-particle,
   .transition-waveform-bar,

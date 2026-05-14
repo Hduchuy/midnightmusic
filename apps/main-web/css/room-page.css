@@ -7,6 +7,73 @@
 /* App luôn hiện */
 #app { opacity: 1 !important; pointer-events: auto !important; }
 
+/* ── Idle overlay — glass card shown when playlist exhausted ── */
+.idle-overlay {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  background: rgba(8, 10, 24, 0.82);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-radius: 20px;
+  align-items: center;
+  justify-content: center;
+}
+
+.idle-overlay.visible {
+  display: flex;
+  animation: idleFadeIn 0.4s ease;
+}
+
+@keyframes idleFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.idle-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+  padding: 32px;
+}
+
+.idle-icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(156, 183, 255, 0.08);
+  border: 1px solid rgba(156, 183, 255, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(156, 183, 255, 0.65);
+  animation: idlePulse 2.5s ease-in-out infinite;
+}
+
+@keyframes idlePulse {
+  0%, 100% { transform: scale(1);    box-shadow: 0 0 0 0 rgba(156, 183, 255, 0.2); }
+  50%       { transform: scale(1.05); box-shadow: 0 0 24px rgba(156, 183, 255, 0.25); }
+}
+
+.idle-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: rgba(255, 255, 255, 0.88);
+  letter-spacing: -0.02em;
+}
+
+.idle-subtitle {
+  font-size: 0.82rem;
+  font-weight: 400;
+  color: rgba(255, 255, 255, 0.38);
+  line-height: 1.55;
+  max-width: 230px;
+}
+
 /* Close Room button — host only, danger accent */
 .room-close-btn {
   display: none; /* shown via JS for host only */
@@ -1200,6 +1267,88 @@ body.yt-iframe-mode #youtube-player {
   
   .chat-message-other .chat-bubble {
     backdrop-filter: blur(5px) !important;
+  }
+
+  /* ── MOBILE PERFORMANCE MODE ── */
+  /* Reduce blur to minimize GPU compositing overhead */
+  .side-panel,
+  .panel-overlay,
+  .now-playing-bar,
+  .chat-message-other .chat-bubble,
+  .plist-panel {
+    backdrop-filter: blur(4px) !important;
+  }
+
+  /* GPU acceleration for video wrapper — prevents repaints during playback */
+  #youtube-player_wrapper,
+  #youtube-player,
+  .video-container,
+  .youtube-player {
+    transform: translateZ(0);
+    will-change: transform;
+  }
+
+  /* ── PARTICLES: reduced when mobile ── */
+  .stars,
+  .rain,
+  .bubbles,
+  .leaves,
+  .meteors {
+    opacity: 0.4 !important;
+  }
+
+  /* ── MOBILE PERFORMANCE MODE: hide all expensive layers ── */
+  .floating-leaves,
+  .floating-stars,
+  .particles-layer,
+  .ambient-glow,
+  .ambient-glow-blob,
+  .background-effects,
+  .animated-bg,
+  .noise-overlay,
+  #sleep-decor,
+  #study-decor {
+    display: none !important;
+  }
+
+  /* ── DISABLE EXPENSIVE CSS ANIMATIONS ── */
+  .floating,
+  .pulse,
+  .glow,
+  .glow-pulse,
+  .rotate,
+  .float-ambient,
+  .hub-orb,
+  .hub-hero-glow,
+  .hub-panel-glow {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* ── REDUCED BLUR ── */
+  .side-panel,
+  .panel-overlay,
+  .now-playing-bar,
+  .plist-panel {
+    backdrop-filter: blur(4px) !important;
+  }
+
+  /* ── BUTTON/UI TRANSITIONS ONLY (keep small transitions) ── */
+  /* Buttons, inputs, panels use transitions — these are cheap */
+  button,
+  .hub-btn-primary,
+  .hub-btn-secondary,
+  .hub-btn-ghost,
+  .mood-btn,
+  .hub-input,
+  .modal-content {
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease !important;
+  }
+
+  /* Rest: disable all infinite/heavy animations */
+  * {
+    animation-duration: 0.001s !important;
+    animation-delay: 0s !important;
   }
 }
 

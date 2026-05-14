@@ -1323,6 +1323,7 @@
       const avatar = AVATAR_REGISTRY[Math.floor(Math.random()*AVATAR_REGISTRY.length)];
       const profile = { nickname, avatar, createdAt: Date.now() };
       _saveGuestProfile(profile);
+      try { localStorage.setItem('mm_profile', JSON.stringify(profile)); } catch (_) {}
       return profile;
     }
 
@@ -1508,7 +1509,14 @@
       }
 
       const newAvatar = HubState.selectedAvatarUrl || AVATAR_REGISTRY[0];
-      _saveGuestProfile({ nickname: newName, avatar: newAvatar, updatedAt: Date.now() });
+      const profile = {
+        nickname: newName,
+        avatar: newAvatar,
+        updatedAt: Date.now()
+      };
+      _saveGuestProfile(profile);
+      // Also persist full profile under mm_profile so room-page can read synchronously
+      try { localStorage.setItem('mm_profile', JSON.stringify(profile)); } catch (_) {}
 
       // Update UI
       const profileName = hub$('profile-name');
@@ -1652,9 +1660,10 @@
         },
         onPublic: (id) => {
           if (autoEnter) {
-            _doJoinRoom(id, '');
+            // Delay ensures UI is fully mounted, socket is ready, and no race conditions
+            setTimeout(() => _doJoinRoom(id, ''), 400);
           } else {
-            // [FIX] Wait for manual user confirmation (Deep-link flow)
+            // Wait for manual user confirmation (Deep-link flow)
             if (joinBtn) {
               joinBtn.disabled = false;
               joinBtn.textContent = 'Tham gia ngay';

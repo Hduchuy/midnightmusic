@@ -78,6 +78,21 @@
                 <button class="unlock-audio-btn" onclick="toggleMute()">Click để bật âm thanh</button>
               </div>
             </div>
+
+            <!-- Idle overlay: shown when playlist is exhausted -->
+            <div class="idle-overlay" id="idle-overlay">
+              <div class="idle-inner">
+                <div class="idle-icon">
+                  <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"/>
+                    <polygon points="10 8 16 12 10 16 10 8" fill="currentColor" stroke="none"/>
+                  </svg>
+                </div>
+                <div class="idle-title">Playlist đã phát xong</div>
+                <div class="idle-subtitle">Thêm bài mới để tiếp tục nghe cùng nhau</div>
+              </div>
+            </div>
+
             <button class="yt-quality-btn" id="yt-quality-btn" title="Cài đặt YouTube">⚙</button>
             <div class="video-mood-glow"></div>
           </div>

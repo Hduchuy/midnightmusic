@@ -1272,6 +1272,65 @@ html, body {
   color: var(--hub-text);
 }
 
+/* ═══════════════════════════════════════════════════════════
+   MOBILE PERFORMANCE MODE — Room Hub
+   Disable heavy ambient effects on mobile to prioritize video playback.
+   ═══════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  /* Hide ambient animated blobs */
+  .hub-orb {
+    animation: none !important;
+    transform: none !important;
+    opacity: 0.1 !important;
+  }
+
+  /* Hide animated hero glow */
+  .hub-hero-glow {
+    animation: none !important;
+    opacity: 0.3 !important;
+  }
+
+  /* Hide animated background panels */
+  .hub-panel-glow,
+  .hub-cta-glow {
+    display: none !important;
+  }
+
+  /* Disable heavy CSS animations on hub page */
+  .hub-hero,
+  .hub-panel,
+  .mood-btn,
+  .hub-btn-primary,
+  .hub-btn-secondary,
+  .hub-btn-ghost {
+    animation: none !important;
+    transform: none !important;
+  }
+
+  /* Keep small UI transitions (buttons, inputs) */
+  button,
+  .hub-btn-primary,
+  .hub-btn-secondary,
+  .hub-btn-ghost,
+  .hub-input,
+  .mood-btn,
+  .modal-content {
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease, opacity 0.15s ease !important;
+  }
+
+  /* Static glow: reduce opacity to near-zero */
+  .hub-hero-glow {
+    opacity: 0.15 !important;
+    filter: none !important;
+  }
+
+  /* Disable all infinite animations */
+  * {
+    animation-duration: 0.001s !important;
+    animation-delay: 0s !important;
+  }
+}
+
 .hub-btn-join-submit { margin-top: .5rem; }
 .hub-btn-join-submit svg { transition: transform .2s; }
 .hub-btn-join-submit:hover:not(:disabled) svg { transform: translateX(3px); }

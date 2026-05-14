@@ -52,10 +52,10 @@ window.closeAllPanels    = () => document.querySelectorAll('.side-panel').forEac
 /* ── Room state ── */
 const room = {
   id: null, socket: null, ytPlayer: null, ytReady: false,
-  currentVideoId: null, isPlaying: false, playlist: [], members: [],
+  currentVideoId: null, isPlaying: false, isIdle: false, playlist: [], members: [],
   currentMood: null,  // set from joined-room, used for fallback check
   isHost: false, hostId: null,
-  myName: localStorage.getItem('mm_room_username') || ('Guest_' + Math.floor(Math.random()*9000+1000)),
+  myName: localStorage.getItem('mm_room_username') || 'Guest',
   myAvatar: '',  // set from guest-profile or join-room emit
   // Stable browser identity: read mm_client_id directly (shared between all tabs)
   // Uses crypto.randomUUID if available, falls back to timestamp+random string.
@@ -77,6 +77,48 @@ const room = {
   currentTrackIndex: -1,
 };
 
+function getLocalProfile() {
+  try {
+    return JSON.parse(localStorage.getItem('mm_profile') || 'null');
+  } catch {
+    return null;
+  }
+}
+
+/* ── Mobile detection ─────────────────────────────────────── */
+const IS_MOBILE = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+if (IS_MOBILE) {
+  document.documentElement.classList.add('mobile-mode');
+  console.log('[MOBILE_MODE] Enabled — effects and animations will be reduced');
+}
+
+let _mobileParticlesPaused = false;
+let _lastProgressUpdate = 0;
+let _lastQueueRender = 0;
+const MOBILE_PROGRESS_THROTTLE = 1000; // Only update progress bar every 1s on mobile
+const MOBILE_RENDER_THROTTLE   = 2000; // Only re-render queue every 2s on mobile
+
+/* ── Throttle helpers ─────────────────────────────────────── */
+function shouldUpdateProgress() {
+  if (!IS_MOBILE) return true;
+  const now = Date.now();
+  if (now - _lastProgressUpdate >= MOBILE_PROGRESS_THROTTLE) {
+    _lastProgressUpdate = now;
+    return true;
+  }
+  return false;
+}
+
+function shouldRenderQueue() {
+  if (!IS_MOBILE) return true;
+  const now = Date.now();
+  if (now - _lastQueueRender >= MOBILE_RENDER_THROTTLE) {
+    _lastQueueRender = now;
+    return true;
+  }
+  return false;
+}
+
 let _lastAppliedTrackVersion = 0;
 let _lastAppliedTrackId = null;
 let _isApplyingTrackChange = false;
@@ -95,8 +137,11 @@ let _lastSearchResults = null;
 let _serverTimeOffset = 0;
 let _progressIntervalId = null;
 let _lastHeartbeatTime = 0;
+let _handledEndedForVideo = null;  // Prevents duplicate handling of the same video's ended event
 let _iframeInteractionMode = false;
 let _iframeInteractionTimer = null;
+let _ytOverlayDisabled = false;          // User toggled off YouTube overlay (wants native controls)
+let _syncPausedByOverlay = false;         // Pause all receive-sync while overlay is off
 
 // ── PENDING ROOM STATE ──────────────────────────────────
 // Queue room state khi player chưa ready
@@ -114,6 +159,8 @@ let _lastAppliedPlaybackRate = 1.0;   // Lưu playbackRate gốc để restore
 let _lastAppliedActionId = 0;         // Action ID đã apply cuối
 let _hardSyncLockUntil = 0;           // 10s action lock sau hard sync
 let _seekCooldownUntil = 0;           // Không nhận seek sync trong X ms
+let _initialSyncPending = false;      // Block local autoplay until server state applied
+let _initialSyncInProgress = false;   // Safe to autoplay inside syncPlayerFromRoomState
 
 // ── AUTHORITATIVE ACTION TRACKING ────────────────────────
 let _lastAuthoritativeAction = null;  // { actionId, actionType, actorSocketId, timestamp }
@@ -226,6 +273,24 @@ function toggleMute() {
 }
 
 /* ── YouTube iframe interaction mode (for native settings/quality menu) ── */
+// Central toggle: drives both DOM styles AND sync pause state
+function setYoutubeOverlayEnabled(enabled) {
+  _ytOverlayDisabled = !enabled;
+  _syncPausedByOverlay = !enabled;
+
+  console.log(`[YT_OVERLAY] enabled=${enabled} syncPaused=${_syncPausedByOverlay}`);
+
+  if (enabled) {
+    forceResyncFromHost();
+  }
+}
+
+async function forceResyncFromHost() {
+  if (!room?.socket) return;
+  console.log('[SYNC] forceResyncFromHost — requesting authoritative state');
+  room.socket.emit('request-room-state');
+}
+
 function enableIframeInteractionMode() {
   if (_iframeInteractionMode) return;
   _iframeInteractionMode = true;
@@ -247,6 +312,9 @@ function enableIframeInteractionMode() {
   }
 
   console.log('[YT][INTERACTION_MODE_ON]');
+
+  // Sync pause while overlay is off (user is using native controls)
+  setYoutubeOverlayEnabled(false);
 
   // Auto-exit after 8 seconds of no interaction
   _iframeInteractionTimer = setTimeout(() => {
@@ -281,18 +349,8 @@ function disableIframeInteractionMode() {
 
   console.log('[YT][INTERACTION_MODE_OFF]');
 
-  // Resync current state to room after exiting interaction mode
-  if (room.currentVideoId && room.ytPlayer && room.ytReady) {
-    const currentTime = room.ytPlayer.getCurrentTime?.() || 0;
-    const isPlaying = room.ytPlayer.getPlayerState?.() === window.YT?.PlayerState?.PLAYING;
-    console.log('[SYNC][RESUMED_AFTER_IFRAME_INTERACTION] emitting current state');
-    room.socket?.emit('sync-video', {
-      currentVideoId: room.currentVideoId,
-      currentTime,
-      isPlaying,
-      trackVersion: room.trackVersion,
-    });
-  }
+  // Resume sync and force hard resync with host
+  setYoutubeOverlayEnabled(true);
 }
 
 function setupIframeInteraction() {
@@ -548,6 +606,22 @@ function setupMoodPanel() {
  */
 function applyMood(mood, { remote = false } = {}) {
   if (!window.MOODS?.includes(mood)) return;
+
+  // On mobile: skip all particle effects to prioritize video playback performance
+  if (IS_MOBILE) {
+    // Only update mood class and UI — skip canvas effects entirely
+    document.body.classList.remove('mood-sad','mood-happy','mood-chill','mood-sleep','mood-study');
+    document.body.classList.add(`mood-${mood}`);
+    const meta = window.MOOD_META?.[mood];
+    if (meta && window.$?.moodChip) {
+      window.$.moodChip.textContent = `${meta.emoji} ${meta.label}`;
+    }
+    document.querySelectorAll('.mood-sync-btn').forEach(btn => {
+      btn.classList.toggle('active', btn.dataset.mood === mood);
+    });
+    if (window.state) window.state.currentMood = mood;
+    return;
+  }
 
   // Ensure effects are resumed if they were suspended during load/background tab
   if (typeof effects !== 'undefined') effects.resumeAll();
@@ -956,6 +1030,12 @@ function addTrack(id, title, author, thumb) {
 
 function renderQueue() {
   if (!el.sharedQueue) return;
+  // Throttle on mobile: avoid DOM re-render spam from sync events
+  if (!shouldRenderQueue()) {
+    // Still update count badge
+    if (el.queueCount) el.queueCount.textContent = `(${room.playlist.length})`;
+    return;
+  }
   if (el.queueCount) el.queueCount.textContent = `(${room.playlist.length})`;
 
   console.log(`[PLAYLIST][FULL_RERENDER] count=${room.playlist.length} currentVideo=${room.currentVideoId}`);
@@ -1150,6 +1230,42 @@ function updateNowPlayingBar(videoId, title, author, thumb) {
   });
 }
 
+/* ── Idle State UI ──────────────────────────────────────────── */
+function updateIdleUI() {
+  const idleOverlay = document.getElementById('idle-overlay');
+  if (!idleOverlay) return;
+
+  if (room.isIdle) {
+    idleOverlay.classList.add('visible');
+  } else {
+    idleOverlay.classList.remove('visible');
+  }
+}
+
+/**
+ * handleRoomIdle — called when server broadcasts room-idle event.
+ * Idempotent: safe to call multiple times.
+ */
+function handleRoomIdle(payload) {
+  const isIdle = !!(payload?.isIdle);
+  console.log(`[SOCKET][ROOM-IDLE] isIdle=${isIdle}`);
+
+  room.isIdle = isIdle;
+
+  if (isIdle) {
+    room.currentVideoId = null;
+    room.currentTrackIndex = -1;
+    room.isPlaying = false;
+    _handledEndedForVideo = null; // reset — new ended events can fire for the next track
+
+    // Hide now-playing bar
+    if (el.nowPlayingBar) el.nowPlayingBar.style.display = 'none';
+    renderQueue();
+  }
+
+  updateIdleUI();
+}
+
 /* ── Player controls ── */
 function setupPlayerControls() {
   el.playBtn?.addEventListener('click', togglePlayback);
@@ -1304,34 +1420,43 @@ function updatePlayBtn() {
 }
 
 /* ── Progress loop ── */
+const HEARTBEAT_INTERVAL_DESKTOP = 3000;
+const HEARTBEAT_INTERVAL_MOBILE  = 15000;  // Much less aggressive on mobile
+const HEARTBEAT_INTERVAL = IS_MOBILE ? HEARTBEAT_INTERVAL_MOBILE : HEARTBEAT_INTERVAL_DESKTOP;
+
 function startProgressLoop() {
   if (_progressIntervalId) clearInterval(_progressIntervalId);
   _progressIntervalId = setInterval(() => {
     if (document.hidden) return;
     const p = room.ytPlayer;
-    if (!p || !room.ytReady || !room.currentVideoId) return;
+    if (!p || !room.ytReady) return;  // stop if player gone, but NOT when idle
 
-    // Update UI
-    updatePlayBtn();
-    const cur = p.getCurrentTime?.() || 0;
-    const dur = p.getDuration?.() || 0;
-    if (!dur) return;
-    if (el.musicProgress) el.musicProgress.value = (cur / dur) * 100;
-    if (el.currentTime)   el.currentTime.textContent = formatTime(cur);
-    if (el.durationTime)  el.durationTime.textContent = formatTime(dur);
+    // Only update progress bar and play button when a video is loaded
+    if (room.currentVideoId && shouldUpdateProgress()) {
+      updatePlayBtn();
+      const cur = p.getCurrentTime?.() || 0;
+      const dur = p.getDuration?.() || 0;
+      if (dur > 0) {
+        if (el.musicProgress) el.musicProgress.value = (cur / dur) * 100;
+        if (el.currentTime)   el.currentTime.textContent = formatTime(cur);
+        if (el.durationTime)  el.durationTime.textContent = formatTime(dur);
+      }
+    }
 
-    // ── Host/Controller: emit heartbeat mỗi 3 giây ──
-    // [FIX] Gửi heartbeat cho CẢ host và controller để server có accurate time
+    // ── Host/Controller: emit heartbeat (throttled on mobile) ──
     const canEmitHeartbeat = room.isHost || _controllerIds.includes(room.socket?.id);
 
     if (canEmitHeartbeat) {
       const now = Date.now();
-      if (now - _lastHeartbeatTime >= 3000) {
+      if (now - _lastHeartbeatTime >= HEARTBEAT_INTERVAL) {
         _lastHeartbeatTime = now;
         const currentTime = p.getCurrentTime?.() || 0;
         const isPlaying = p.getPlayerState?.() === window.YT?.PlayerState?.PLAYING;
-        console.log(`[HEARTBEAT][EMIT] time=${currentTime.toFixed(1)} playing=${isPlaying} isHost=${room.isHost}`);
-        room.socket?.emit('room-heartbeat', currentTime);
+        console.log(`[HEARTBEAT][EMIT] time=${currentTime.toFixed(1)} playing=${isPlaying} isHost=${room.isHost} mobile=${IS_MOBILE} isIdle=${room.isIdle}`);
+        room.socket?.emit('room-heartbeat', {
+          time: currentTime,
+          isIdle: room.isIdle,
+        });
       }
     }
   }, 600);
@@ -1444,7 +1569,7 @@ function createYTPlayer() {
     width:  '100%',
     videoId: '',
     playerVars: {
-      autoplay:       1,
+      autoplay:       0,
       controls:       1,  // 1 = show YT native controls (quality gear accessible)
       disablekb:      1,
       modestbranding: 1,
@@ -1454,16 +1579,23 @@ function createYTPlayer() {
       playsinline:    1,
       enablejsapi:    1,
       origin:         origin,
-      vq:             'hd1080',
+      vq:             IS_MOBILE ? 'medium' : 'hd1080',
     },
     events: {
       onReady: () => {
-        console.log('[YT][READY] Player ready ✓');
+        console.log('[YT][READY] Player ready ✓ mobile=' + IS_MOBILE);
         room.ytReady = true;
 
         if (_forceSourceLoadTimer) {
           clearTimeout(_forceSourceLoadTimer);
           _forceSourceLoadTimer = null;
+        }
+
+        // Force lower quality on mobile to reduce buffering
+        if (IS_MOBILE) {
+          try {
+            room.ytPlayer?.setPlaybackQualityRange?.('small', 'medium');
+          } catch (_) {}
         }
 
         applyPendingRoomState();
@@ -1477,15 +1609,55 @@ function createYTPlayer() {
           const vid = room.ytPlayer?.getVideoData?.()?.video_id;
           if (vid && vid !== _qualityAppliedForVideoId) {
             _qualityAppliedForVideoId = vid;
-            _applyMaxQuality(0);
-            console.log('[YT Quality] Starting quality sequence for:', vid);
+            // Skip quality escalation on mobile — reduces rebuffer
+            if (!IS_MOBILE) {
+              _applyMaxQuality(0);
+              console.log('[YT Quality] Starting quality sequence for:', vid);
+            } else {
+              console.log('[YT Quality][MOBILE] Skipping quality escalation — mobile mode');
+            }
+          }
+          // Pause heavy particles while video is playing on mobile
+          if (IS_MOBILE && window.effects && !_mobileParticlesPaused) {
+            _mobileParticlesPaused = true;
+            effects.suspendAll();
+          }
+        } else if (
+          e.data === window.YT?.PlayerState?.PAUSED ||
+          e.data === window.YT?.PlayerState?.ENDED
+        ) {
+          // Resume particles when video is paused/stopped
+          if (IS_MOBILE && window.effects && _mobileParticlesPaused) {
+            _mobileParticlesPaused = false;
+            effects.resumeAll();
           }
         }
 
         if (e.data === window.YT?.PlayerState?.ENDED) {
+          // Guard: skip if already handled this video's ended event
+          if (_handledEndedForVideo === room.currentVideoId) {
+            console.log('[YT] ENDDED ignored — already handled for', room.currentVideoId);
+            return;
+          }
+          _handledEndedForVideo = room.currentVideoId;
+
           if (room.isHost && !_isApplyingTrackChange) {
-            console.log('[YT] Video ended (host) → triggering next');
-            skipTrack(1);
+            const currentIdx = room.playlist.findIndex(t => t.id === room.currentVideoId);
+            const nextIdx = currentIdx + 1;
+
+            if (nextIdx < room.playlist.length) {
+              // Normal: go to next track
+              console.log('[YT] Video ended (host) → triggering next');
+              skipTrack(1);
+            } else {
+              // Playlist exhausted → enter idle state
+              console.log('[YT] Playlist ended (host) → entering idle');
+              room.isIdle = true;
+              room.currentVideoId = null;
+              room.currentTrackIndex = -1;
+              room.isPlaying = false;
+              updateIdleUI();
+            }
           } else if (!room.isHost) {
             console.log('[YT] Video ended (listener) → waiting for server sync');
           } else {
@@ -1622,6 +1794,10 @@ function waitForPlayingState(timeoutMs = 10000) {
 // ── Autoplay muted flow ────────────────────────────────────
 async function safeAutoplay(p, { showOverlayOnFail = true } = {}) {
   if (!p) return false;
+  if (_initialSyncPending && !_initialSyncInProgress) {
+    console.log('[AUTOPLAY][SKIP] initial sync pending');
+    return false;
+  }
   if (!room.ytReady) {
     console.log('[AUTOPLAY][SKIP] player not ready');
     return false;
@@ -1732,6 +1908,14 @@ function setupAudioUnlock() {
 function _loadVideo(videoId, startSeconds, shouldPlay) {
   console.log(`[_LOAD-VIDEO] ${videoId} start=${startSeconds}s play=${shouldPlay}`);
 
+  if (_initialSyncPending) {
+    console.log('[_LOAD-VIDEO][SKIP] initial sync pending — defer to server state');
+    _pendingVideoId  = videoId;
+    _pendingTime    = startSeconds || 0;
+    _pendingPlaying = shouldPlay;
+    return;
+  }
+
   if (!room.ytPlayer || !room.ytReady) {
     console.log('[_LOAD-VIDEO][SKIP] player not ready ytPlayer=' + !!room.ytPlayer + ' ytReady=' + !!room.ytReady);
     _pendingVideoId  = videoId;
@@ -1783,6 +1967,13 @@ function _loadVideo(videoId, startSeconds, shouldPlay) {
 }
 
 // ── Sync player từ room state (cho user mới join) ─────────
+// Host is authoritative source. Guest must:
+// 1. Wait for player ready
+// 2. Load video
+// 3. Wait for video to load
+// 4. Seek to exact host time  (HARD SYNC — no drift threshold on initial)
+// 5. Apply play/pause
+// 6. Unlock player
 async function syncPlayerFromRoomState(state) {
   if (!state) { console.log('[SYNC] No state'); return; }
 
@@ -1793,6 +1984,10 @@ async function syncPlayerFromRoomState(state) {
   console.log(`[SYNC] video=${videoId} play=${isPlaying} time=${currentTime.toFixed(1)}`);
 
   if (!videoId) { console.log('[SYNC] No video'); return; }
+
+  // Mark: player is locked until initial state is fully applied
+  _initialSyncPending = true;
+  _initialSyncInProgress = true;
 
   // Nếu player chưa ready → QUEUE toàn bộ state
   if (!room.ytPlayer || !room.ytReady) {
@@ -1817,15 +2012,11 @@ async function syncPlayerFromRoomState(state) {
       await waitForVideoLoad();
     }
 
-    // 2. Seek
-    const localTime = p.getCurrentTime?.() || 0;
-    const drift = Math.abs(localTime - currentTime);
-    if (drift > 1) {
-      console.log(`[SYNC] Seeking to ${currentTime.toFixed(1)}s (drift=${drift.toFixed(1)}s)`);
-      p.seekTo?.(currentTime, true);
-    }
+    // 2. HARD SYNC: always seek to exact host time (no drift threshold on initial join)
+    console.log(`[SYNC] Hard seek to ${currentTime.toFixed(1)}s`);
+    p.seekTo?.(currentTime, true);
 
-    // 3. Play/Pause
+    // 3. Apply pause/play AFTER seek (never play before seek)
     if (isPlaying) {
       await safeAutoplay(p);
     } else {
@@ -1847,7 +2038,9 @@ async function syncPlayerFromRoomState(state) {
     console.log('[SYNC] ✓ Complete');
 
   } finally {
-    setTimeout(() => { _isRemoteSync = false; }, 300);
+    _isRemoteSync = false;
+    _initialSyncPending = false;      // Unlock player
+    _initialSyncInProgress = false;   // Exit initial sync context
   }
 }
 
@@ -1877,6 +2070,13 @@ async function syncVideoState(state) {
 
   if (!videoId) return;
   if (videoId !== room.currentVideoId) { console.log('[VIDEO_SYNC] Track mismatch'); return; }
+
+  // ── Overlay: pause ALL sync except force-hard overlay_resync ──
+  const forceHardSync = !!(state?.forceHardSync || state?.syncType === 'overlay_resync');
+  if (_syncPausedByOverlay && !forceHardSync) {
+    console.log('[VIDEO_SYNC] skipped (overlay disabled, not force-hard)');
+    return;
+  }
 
   // ── Action Version Check ──────────────────────────────────
   if (_shouldIgnoreStaleAction(actionId)) {
@@ -2256,9 +2456,16 @@ async function handleTrackChanged(payload) {
     const p = room.ytPlayer;
     if (!p) return;
 
+    // Guard: skip if initial sync pending (server state will apply when ready)
+    if (_initialSyncPending) {
+      console.log('[TRACK_CHANGE][SKIP] initial sync pending');
+      return;
+    }
+
     // Load video
     console.log(`[TRACK_CHANGE] Loading: ${videoId}`);
     _qualityAppliedForVideoId = null;
+    _handledEndedForVideo = null; // reset — new video's ended event can fire normally
     p.loadVideoById({ videoId, startSeconds: 0, suggestedQuality: 'hd1080' });
     await waitForVideoLoad();
 
@@ -2622,8 +2829,10 @@ function setupSocket() {
       hostToken = sessionStorage.getItem('hostToken_' + room.id) || '';
     }
 
-    // 4. Load avatar from localStorage (set by hub or previous room-page visit)
-    const joinAvatar = localStorage.getItem('mm_guest_avatar') || '';
+    // 4. Load full profile from mm_profile (synchronous — set by Room Hub)
+    const profile = getLocalProfile();
+    const joinAvatar = profile?.avatar || localStorage.getItem('mm_guest_avatar') || '';
+    const joinName   = profile?.nickname || room.myName || 'Guest';
 
     // CRITICAL DEBUG: trace what's being sent to server
     console.group('[SOCKET][JOIN-EMIT]');
@@ -2631,11 +2840,12 @@ function setupSocket() {
     console.log('  hostToken found:', !!hostToken, hostToken ? hostToken.substring(0,8)+'...' : null);
     console.log('  joinPassword found:', !!joinPassword);
     console.log('  joinAvatar found:', !!joinAvatar);
-    console.log('  myName:', room.myName);
+    console.log('  joinName:', joinName);
     console.log('  myClientId:', room.myClientId);
+    console.log('  profile:', JSON.stringify(profile));
     console.groupEnd();
 
-    s.emit('join-room', { roomId: room.id, name: room.myName, hostToken, password: joinPassword, avatar: joinAvatar, clientId: room.myClientId });
+    s.emit('join-room', { roomId: room.id, name: joinName, hostToken, password: joinPassword, avatar: joinAvatar, clientId: room.myClientId, profile });
   });
 
   s.on('disconnect', (reason) => {
@@ -2689,10 +2899,23 @@ function setupSocket() {
     const members         = payload?.members         || [];
     const serverTime      = payload?.serverTime      || Date.now();
     const controllerIds   = payload?.controllerIds   || [];
+    const myProfile      = payload?.myProfile       || null;
+    const isIdle         = !!payload?.isIdle;
 
-    console.log(`[SOCKET][JOINED-ROOM] roomId=${roomId} roomName=${roomName} isHost=${isHost} hostId=${hostId} memberCount=${members.length} playlistSkipped=${_skipPlaylistOnJoinedRoom}`);
+    console.log(`[SOCKET][JOINED-ROOM] roomId=${roomId} roomName=${roomName} isHost=${isHost} hostId=${hostId} memberCount=${members.length} playlistSkipped=${_skipPlaylistOnJoinedRoom} isIdle=${isIdle}`);
     console.log(`[ROOM_STATE_RECEIVED] videoId=${state?.currentVideoId} playing=${state?.isPlaying} time=${state?.currentTime} version=${state?.trackVersion} playlistLen=${playlist.length}`);
-    console.log(`[ROOM_STATE_RECEIVED] full_payload`, JSON.stringify(payload, null, 2));
+    console.log(`[MY_PROFILE]`, myProfile);
+
+    // ── Authoritative self-profile: always use server-confirmed profile ──
+    // This overrides any locally-cached value and ensures the user always sees their own avatar/name.
+    if (myProfile) {
+      room.myName   = myProfile.name   || room.myName;
+      room.myAvatar = myProfile.avatar || room.myAvatar;
+      // Persist so reconnect / F5 work without needing mm_profile
+      localStorage.setItem('mm_room_username', room.myName);
+      localStorage.setItem('mm_guest_avatar', room.myAvatar || '');
+      console.log('[MY_PROFILE] Applied authoritative profile:', room.myName, room.myAvatar);
+    }
 
     // ── Fault-tolerant hydration pipeline ──────────────────────
     // Each step is wrapped individually so a render/UI crash does not kill state sync.
@@ -2706,6 +2929,7 @@ function setupSocket() {
       room.trackVersion      = typeof state?.trackVersion === 'number' ? state.trackVersion : 0;
       room.currentTrackIndex = Number.isInteger(state?.currentTrackIndex) ? state.currentTrackIndex : -1;
       room.currentMood       = state?.mood || 'chill';
+      room.isIdle            = isIdle;
 
       // Khởi tạo controller state
       _controllerIds = controllerIds;
@@ -2744,6 +2968,11 @@ function setupSocket() {
       console.log('[ROOM_STATE_RECEIVED] no current video, skip load');
       try { updatePlayBtn(); } catch (e) { console.error('[HYDRATE][PLAYBTN]', e); }
     }
+
+    // Show idle UI if room is already idle on join
+    if (room.isIdle) {
+      try { updateIdleUI(); } catch (e) { console.error('[HYDRATE][IDLE_UI]', e); }
+    }
     // Welcome message
     if (!window._welcomeShown) {
       window._welcomeShown = true;
@@ -2770,6 +2999,13 @@ function setupSocket() {
   // - > 20s → hard seek (cả forward và backward)
   s.on('playback-state', state => {
     if (!state) return;
+
+    // ── Overlay: pause ALL sync except force-hard overlay_resync ──
+    const forceHardSync = !!(state?.forceHardSync || state?.syncType === 'overlay_resync');
+    if (_syncPausedByOverlay && !forceHardSync) {
+      console.log('[PLAYBACK_STATE] skipped (overlay disabled, not force-hard)');
+      return;
+    }
 
     const cfg = window.HYBRID_SYNC || window.SOFT_SYNC || {};
 
@@ -2824,6 +3060,22 @@ function setupSocket() {
       return;
     }
 
+    // ── Overlay Resync: FORCE HARD SYNC, bypass all thresholds & cooldowns ──
+    const isOverlayResync = state?.syncType === 'overlay_resync' || state?.forceHardSync;
+    if (isOverlayResync) {
+      const p = room.ytPlayer;
+      if (!p) return;
+      const targetTime = state.currentTime || 0;
+      console.log(`[SYNC][OVERLAY_RESYNC] forceHardSync → seek ${targetTime.toFixed(1)}s play=${state.isPlaying}`);
+      p.seekTo(targetTime, true);
+      if (state.isPlaying) {
+        safeAutoplay(p).catch(() => {});
+      } else {
+        p.pauseVideo?.();
+      }
+      return;
+    }
+
     // ── Play/Pause Sync (always sync) ─────────────────────────
     const playerState = p.getPlayerState?.();
     const ytPlaying = playerState === window.YT?.PlayerState?.PLAYING;
@@ -2857,7 +3109,7 @@ function setupSocket() {
     const mediumDrift = cfg.MEDIUM_DRIFT_THRESHOLD || 20;
     const largeDrift  = cfg.LARGE_DRIFT_THRESHOLD  || 20;
 
-    console.log(`[SYNC][DRIFT] guest=${localTime.toFixed(1)}s host=${serverTime.toFixed(1)}s drift=${driftAbs.toFixed(1)}s`);
+    console.log(`[SYNC][DRIFT] guest=${localTime.toFixed(1)}s host=${serverTime.toFixed(1)}s drift=${driftAbs.toFixed(1)}s mobile=${IS_MOBILE}`);
 
     // < 5s: ignore
     if (driftAbs <= smallDrift) {
@@ -2865,6 +3117,25 @@ function setupSocket() {
       return;
     }
 
+    // ── Mobile: Aggressive guard — never seek backward, only forward >20s ──
+    if (IS_MOBILE) {
+      // Guest ahead of host: IGNORE (don't seek backward on mobile — expensive)
+      if (drift < 0) {
+        console.log(`[SYNC][MOBILE_IGNORE] guest ahead ${driftAbs.toFixed(1)}s — ignoring`);
+        return;
+      }
+      // Behind < 20s: IGNORE (only correct large drift on mobile)
+      if (driftAbs < largeDrift) {
+        console.log(`[SYNC][MOBILE_IGNORE] drift ${driftAbs.toFixed(1)}s < ${largeDrift}s threshold on mobile`);
+        return;
+      }
+      // Behind >= 20s: hard seek forward only
+      console.log(`[SYNC][MOBILE_HARD_SEEK] drift=${driftAbs.toFixed(1)}s ≥ ${largeDrift}s → seeking to ${serverTime.toFixed(1)}s`);
+      _applyHardSeek(serverTime, localTime);
+      return;
+    }
+
+    // ── Desktop: normal thresholds ──
     // Check cooldown
     if (_shouldIgnoreSync()) {
       return;
@@ -2901,6 +3172,13 @@ function setupSocket() {
     }
     handleTrackChanged(payload);
   });
+
+  // ── Room idle state (playlist exhausted) ──────────────────
+  s.on('room-idle', payload => {
+    console.log(`[SOCKET][ROOM-IDLE]`, JSON.stringify(payload));
+    handleRoomIdle(payload);
+  });
+
   s.on('playlist-updated',  list  => {
     if (!list) return;
     console.log(`[SOCKET][PLAYLIST-UPDATED] incomingLength=${list.length} localLength=${room.playlist.length} incomingIds=${list.map(v => v.id).join(',')}`);
@@ -3007,6 +3285,29 @@ function setupSocket() {
     try { updateControlUI(); } catch (e) { console.error('[HYDRATE][CONTROL]', e); }
     try { renderMemberList(); } catch (e) { console.error('[HYDRATE][MEMBERS]', e); }
   });
+  // Profile updated: refresh member list and persist locally
+  s.on('profile-updated', ({ id, name, avatar }) => {
+    console.log(`[SOCKET][PROFILE_UPDATED] id=${id} name=${name} avatar=${avatar}`);
+
+    // Update in members array
+    const member = room.members.find(m => m.id === id);
+    if (member) {
+      if (name)   member.name   = name;
+      if (avatar) member.avatar = avatar;
+    }
+
+    // If it's the current user, persist and sync state
+    if (id === room.socket?.id) {
+      room.myName   = name   || room.myName;
+      room.myAvatar = avatar || room.myAvatar;
+      localStorage.setItem('mm_room_username', room.myName);
+      localStorage.setItem('mm_guest_avatar', room.myAvatar || '');
+      try { localStorage.setItem('mm_profile', JSON.stringify({ nickname: room.myName, avatar: room.myAvatar })); } catch (_) {}
+    }
+
+    try { renderMemberList(); } catch (e) { console.error('[HYDRATE][PROFILE]', e); }
+  });
+
   s.on('room-error', msg => {
     console.log(`[SOCKET][ROOM-ERROR] msg=${msg}`);
     notify(msg);
@@ -3235,17 +3536,14 @@ function boot() {
   // replaceState does NOT trigger a page reload — socket connection stays intact.
   window.history.replaceState({}, '', '/r/' + room.id);
 
-  // Seed avatar from guest-profile
-  try {
-    import('./guest-profile.js').then(({ getGuestProfile }) => {
-      const profile = getGuestProfile();
-      room.myAvatar = profile.avatar || '';
-      localStorage.setItem('mm_guest_avatar', profile.avatar || '');
-      console.log('[MEMBER_AVATAR] Seeded from profile:', room.myAvatar);
-    }).catch(err => {
-      console.error('[MEMBER_AVATAR] Import failed:', err);
-    });
-  } catch (_) {}
+  // Seed avatar and name from mm_profile (synchronous — set by Room Hub)
+  const profile = getLocalProfile();
+  if (profile) {
+    room.myName = profile.nickname || room.myName;
+    room.myAvatar = profile.avatar || '';
+    localStorage.setItem('mm_guest_avatar', profile.avatar || '');
+    console.log('[MEMBER_AVATAR] Seeded from mm_profile:', room.myAvatar);
+  }
   setupMoodPanel();
   setupPlistTabs();
   setupSearch();
@@ -3300,9 +3598,9 @@ function boot() {
     room.ytPlayer?.playVideo?.();
   });
   
-  if (typeof effects !== 'undefined') effects.resumeAll();
-  if (typeof initStars === 'function') initStars();
-  if (typeof effects !== 'undefined') effects.start('stars');
+  if (!IS_MOBILE && typeof effects !== 'undefined') effects.resumeAll();
+  if (!IS_MOBILE && typeof initStars === 'function') initStars();
+  if (!IS_MOBILE && typeof effects !== 'undefined') effects.start('stars');
   // Wait for joined-room event to set the authoritative mood.
   startProgressLoop();
 }
