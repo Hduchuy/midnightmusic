@@ -2013,6 +2013,16 @@ function _loadVideo(videoId, startSeconds, shouldPlay) {
   });
 }
 
+function isFreshControlAction(state) {
+   const t = state?.type || state?.actionType;
+   return (
+      t === 'seek' ||
+      t === 'play' ||
+      t === 'manual_seek' ||
+      t === 'manual_play'
+   );
+}
+
 // ── Sync player từ room state (cho user mới join) ─────────
 // Host is authoritative source. Guest must:
 // 1. Wait for player ready
@@ -2037,12 +2047,22 @@ async function syncPlayerFromRoomState(state) {
   }
 
   if (state?.currentVideoId === room.currentVideoId && room.playerState === window.YT?.PlayerState?.ENDED) {
-     console.log('[SYNC][IGNORE_REPLAY_ENDED] ignore replay ended video');
-     return;
+     if (!isFreshControlAction(state)) {
+       console.log('[SYNC][IGNORE_REPLAY_ENDED] ignore replay ended video');
+       return;
+     }
   }
   if (room.hasEnded) {
-     console.log('[SYNC] ignored because room.hasEnded');
-     return;
+     if (!isFreshControlAction(state)) {
+       console.log('[SYNC][IGNORE_PASSIVE_REPLAY] ignored because room.hasEnded');
+       return;
+     } else {
+       console.log('[SYNC][HOST_REPLAY_ALLOWED]');
+       console.log('[SYNC][ENDED_RESET]');
+       room.hasEnded = false;
+       room.isIdle = false;
+       window.hidePlaylistEndedOverlay?.();
+     }
   }
 
   console.log(`[SYNC] video=${videoId} play=${isPlaying} time=${currentTime.toFixed(1)}`);
@@ -2137,12 +2157,22 @@ async function syncVideoState(state) {
   if (videoId !== room.currentVideoId) { console.log('[VIDEO_SYNC] Track mismatch'); return; }
 
   if (state?.currentVideoId === room.currentVideoId && room.playerState === window.YT?.PlayerState?.ENDED) {
-     console.log('[SYNC][IGNORE_REPLAY_ENDED] ignore replay ended video');
-     return;
+     if (!isFreshControlAction(state)) {
+       console.log('[SYNC][IGNORE_REPLAY_ENDED] ignore replay ended video');
+       return;
+     }
   }
   if (room.hasEnded && state?.currentVideoId === room.currentVideoId) {
-     console.log('[SYNC] ignored because room.hasEnded');
-     return;
+     if (!isFreshControlAction(state)) {
+       console.log('[SYNC][IGNORE_PASSIVE_REPLAY] ignored because room.hasEnded');
+       return;
+     } else {
+       console.log('[SYNC][SEEK_AFTER_END]');
+       console.log('[SYNC][ENDED_RESET]');
+       room.hasEnded = false;
+       room.isIdle = false;
+       window.hidePlaylistEndedOverlay?.();
+     }
   }
 
   // ── Overlay: pause ALL sync except force-hard overlay_resync ──
@@ -2494,12 +2524,21 @@ async function handleTrackChanged(payload) {
   if (!videoId) return;
 
   if (payload?.currentVideoId === room.currentVideoId && room.playerState === window.YT?.PlayerState?.ENDED) {
-     console.log('[SYNC][IGNORE_REPLAY_ENDED] ignore replay ended video');
-     return;
+     if (!isFreshControlAction(payload)) {
+       console.log('[SYNC][IGNORE_REPLAY_ENDED] ignore replay ended video');
+       return;
+     }
   }
   if (room.hasEnded && payload?.currentVideoId === room.currentVideoId) {
-     console.log('[SYNC] ignored because room.hasEnded');
-     return;
+     if (!isFreshControlAction(payload)) {
+       console.log('[SYNC][IGNORE_PASSIVE_REPLAY] ignored because room.hasEnded');
+       return;
+     } else {
+       console.log('[SYNC][ENDED_RESET]');
+       room.hasEnded = false;
+       room.isIdle = false;
+       window.hidePlaylistEndedOverlay?.();
+     }
   }
 
   // Deduplication
@@ -2547,12 +2586,19 @@ async function handleTrackChanged(payload) {
       return;
     }
 
-    // Load video
-    console.log(`[TRACK_CHANGE] Loading: ${videoId}`);
-    _qualityAppliedForVideoId = null;
-    _handledEndedForVideo = null; // reset — new video's ended event can fire normally
-    p.loadVideoById({ videoId, startSeconds: 0, suggestedQuality: 'hd1080' });
-    await waitForVideoLoad();
+    const currentVideo = p.getVideoData?.()?.video_id || null;
+    if (currentVideo !== videoId) {
+      // Load video
+      console.log(`[TRACK_CHANGE] Loading: ${videoId}`);
+      _qualityAppliedForVideoId = null;
+      _handledEndedForVideo = null; // reset — new video's ended event can fire normally
+      p.loadVideoById({ videoId, startSeconds: 0, suggestedQuality: 'hd1080' });
+      room.playerState = -1;
+      room.hasEnded = false;
+      await waitForVideoLoad();
+    } else {
+      console.log(`[TRACK_CHANGE] Same video ${videoId}, skipping loadVideoById`);
+    }
 
     // Seek & Play/Pause
     if (currentTime > 0) { p.seekTo?.(currentTime, true); }
