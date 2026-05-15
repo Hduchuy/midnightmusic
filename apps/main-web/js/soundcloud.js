@@ -11,6 +11,78 @@ function stopMainPlayer(){
 function setSoundCloudMode(active){
   state.soundcloud.active = !!active;
   document.body.classList.toggle('soundcloud-mode', !!active);
+  if (active) setupSoundCloudGlobalListeners();
+}
+
+let scGlobalListenersAdded = false;
+let scLastPlayAttemptAt = 0;
+let scPendingAutoplayTimer = null;
+
+function setPendingAutoplay(value) {
+  state.soundcloud.pendingAutoplay = value;
+  if (scPendingAutoplayTimer) {
+    clearTimeout(scPendingAutoplayTimer);
+    scPendingAutoplayTimer = null;
+  }
+  
+  if (value) {
+    state.soundcloud.retryCount = 0;
+    state.soundcloud.maxRetry = 3;
+    scPendingAutoplayTimer = setTimeout(() => {
+      if (state.soundcloud.pendingAutoplay) {
+        state.soundcloud.pendingAutoplay = false;
+        console.log('[SC] Auto cleared stale pendingAutoplay');
+      }
+    }, 15000);
+  }
+}
+
+async function attemptSoundCloudResume(reason) {
+  if (!state.soundcloud.active || !state.soundcloud.pendingAutoplay) return;
+  if (document.hidden) return; // Only retry if visible
+
+  const now = Date.now();
+  if (now - scLastPlayAttemptAt < 2000) return; // Cooldown 2s
+
+  const oldIframe = $.soundcloudPlayer?.querySelector('iframe');
+  if (!oldIframe || typeof SC === 'undefined' || !SC.Widget) return;
+
+  scLastPlayAttemptAt = now; // update cooldown immediately to debounce concurrent events
+
+  const widget = SC.Widget(oldIframe);
+
+  widget.isPaused((paused) => {
+    if (!paused) {
+      // Đã PLAYING -> Không retry nữa
+      setPendingAutoplay(false);
+      return;
+    }
+    
+    console.log(`[SC][PLAY_ATTEMPT] reason=${reason}`);
+    widget.play();
+    
+    if (typeof state.soundcloud.retryCount === 'undefined') state.soundcloud.retryCount = 0;
+    state.soundcloud.retryCount++;
+    if (state.soundcloud.retryCount > state.soundcloud.maxRetry) {
+      setPendingAutoplay(false);
+      notify('Không thể tự phát khi tab nền');
+      console.log('[SC][PLAY_FAILED] Max retries reached');
+    }
+  });
+}
+
+function setupSoundCloudGlobalListeners() {
+  if (scGlobalListenersAdded) return;
+  scGlobalListenersAdded = true;
+
+  const triggerResume = (e) => attemptSoundCloudResume(e.type);
+
+  window.addEventListener('pageshow', triggerResume);
+  document.addEventListener('resume', triggerResume);
+  document.addEventListener('visibilitychange', triggerResume);
+  window.addEventListener('focus', triggerResume);
+  document.addEventListener('pointerdown', triggerResume, { passive: true });
+  document.addEventListener('click', triggerResume, { passive: true });
 }
 
 function refreshSoundCloudMarquee() {
@@ -141,6 +213,8 @@ function playNextSoundCloudQueue() {
   }
 }
 
+let _isHandlingTrackEnd = false;
+
 async function playSoundCloud(urlArg, options = {}){
   // Bỏ qua nếu là event object
   if (urlArg && typeof urlArg === 'object' && urlArg.type) {
@@ -185,8 +259,11 @@ async function playSoundCloud(urlArg, options = {}){
       state.soundcloud.currentUrl = url;
       state.soundcloud.currentEmbed = embedSrc;
       
+      console.log('[SC][LOAD_NEXT]', url);
+      setPendingAutoplay(true);
+
       widget.load(url, {
-        auto_play: true,
+        auto_play: false, // We'll manually play it to track success/failure
         show_artwork: false,
         visual: false,
         hide_related: true,
@@ -232,6 +309,7 @@ async function playSoundCloud(urlArg, options = {}){
   setSoundCloudMode(true);
   state.soundcloud.currentUrl = url;
   state.soundcloud.currentEmbed = embedSrc;
+  setPendingAutoplay(true);
   
   // Clear thông tin bài cũ, gán tạm thời
   state.soundcloud.title = 'SoundCloud Player';
@@ -267,10 +345,49 @@ async function playSoundCloud(urlArg, options = {}){
   // Khởi tạo Widget API an toàn
   if (typeof SC !== 'undefined' && SC.Widget) {
     const widget = SC.Widget(iframe);
+    
+    // Unbind before binding to prevent duplicate listeners
+    widget.unbind(SC.Widget.Events.READY);
+    widget.unbind(SC.Widget.Events.PLAY);
+    widget.unbind(SC.Widget.Events.ERROR);
+    widget.unbind(SC.Widget.Events.FINISH);
+    
+    // Bind global READY event
+    widget.bind(SC.Widget.Events.READY, () => {
+      // If we flagged pendingAutoplay (from isAutoNext flow or initial auto_play issue)
+      if (state.soundcloud.pendingAutoplay) {
+        setTimeout(() => {
+          attemptSoundCloudResume('READY');
+        }, 300);
+      }
+    });
+
+    widget.bind(SC.Widget.Events.PLAY, () => {
+      console.log('[SC][PLAY_SUCCESS]');
+      setPendingAutoplay(false);
+    });
+
+    // We can also bind ERROR if available (SC Widget API error event)
+    widget.bind(SC.Widget.Events.ERROR, (err) => {
+      console.log('[SC][PLAY_FAILED]', err);
+    });
+
     widget.bind(SC.Widget.Events.FINISH, () => {
-      if (state.soundcloud.queue && state.soundcloud.queue.length > 0) {
-        // Gọi TRỰC TIẾP, không dùng setTimeout để tránh bị browser throttle/pause khi ở background tab
-        playNextSoundCloudQueue();
+      console.log('[SC][FINISH]');
+      
+      if (_isHandlingTrackEnd) {
+         console.log('[SC][FINISH] Ignored - already handling track end');
+         return;
+      }
+      
+      _isHandlingTrackEnd = true;
+      try {
+        if (state.soundcloud.queue && state.soundcloud.queue.length > 0) {
+          console.log('[SC][NEXT_TRACK]');
+          playNextSoundCloudQueue();
+        }
+      } finally {
+        setTimeout(() => { _isHandlingTrackEnd = false; }, 1000);
       }
     });
   }
