@@ -142,6 +142,7 @@ let _iframeInteractionMode = false;
 let _iframeInteractionTimer = null;
 let _ytOverlayDisabled = false;          // User toggled off YouTube overlay (wants native controls)
 let _syncPausedByOverlay = false;         // Pause all receive-sync while overlay is off
+let _isHandlingTrackEnd = false;
 
 // ── PENDING ROOM STATE ──────────────────────────────────
 // Queue room state khi player chưa ready
@@ -986,6 +987,7 @@ function extractVideoId(url) {
 }
 
 function addTrack(id, title, author, thumb) {
+  window.hidePlaylistEndedOverlay();
   console.log(`[ADD-TRACK] id=${id} title=${title} author=${author}`);
   if (isVideoBlocked(id)) {
     showToast('⚠️ Video này bị chặn (không thể nhúng)', 'warning');
@@ -1142,6 +1144,7 @@ function renderQueue() {
  * Updates ALL state together, no stale refs.
  */
 function playTrack(id) {
+  window.hidePlaylistEndedOverlay();
   console.log(`[PLAY-TRACK] called id=${id} currentVideoId=${room.currentVideoId} isHost=${room.isHost}`);
   const track = room.playlist.find(t => t.id === id);
   if (!track) {
@@ -1230,17 +1233,30 @@ function updateNowPlayingBar(videoId, title, author, thumb) {
   });
 }
 
-/* ── Idle State UI ──────────────────────────────────────────── */
-function updateIdleUI() {
-  const idleOverlay = document.getElementById('idle-overlay');
-  if (!idleOverlay) return;
+/* ── Playlist Ended Overlay Helpers ──────────────────────────────────────────── */
+window.hidePlaylistEndedOverlay = function() {
+  const overlay = document.getElementById('playlist-ended-overlay') || document.querySelector('.playlist-ended-overlay');
+  if (!overlay) return;
 
-  if (room.isIdle) {
-    idleOverlay.classList.add('visible');
-  } else {
-    idleOverlay.classList.remove('visible');
+  overlay.classList.remove('show');
+  document.body.classList.remove('playlist-ended');
+};
+
+window.showPlaylistEndedOverlay = function() {
+  if (
+     room?.playlist?.length > 0
+     || room?.currentVideoId
+     || room?.isPlaying
+  ) {
+     return;
   }
-}
+
+  const overlay = document.getElementById('playlist-ended-overlay') || document.querySelector('.playlist-ended-overlay');
+  if (!overlay) return;
+
+  overlay.classList.add('show');
+  document.body.classList.add('playlist-ended');
+};
 
 /**
  * handleRoomIdle — called when server broadcasts room-idle event.
@@ -1261,9 +1277,12 @@ function handleRoomIdle(payload) {
     // Hide now-playing bar
     if (el.nowPlayingBar) el.nowPlayingBar.style.display = 'none';
     renderQueue();
+    if (room.playlist.length <= 0) {
+      window.showPlaylistEndedOverlay();
+    }
+  } else {
+    window.hidePlaylistEndedOverlay();
   }
-
-  updateIdleUI();
 }
 
 /* ── Player controls ── */
@@ -1387,6 +1406,7 @@ function _throttledSyncVideo(data) {
 }
 
 function skipTrack(dir) {
+  window.hidePlaylistEndedOverlay();
   console.log(`[SKIP-TRACK] dir=${dir} isHost=${room.isHost} playlistLength=${room.playlist.length}`);
   if (!canControlPlayer()) {
     console.log('[SKIP-TRACK] ignored: no control permission');
@@ -1633,6 +1653,10 @@ function createYTPlayer() {
           }
         }
 
+        if (e.data === window.YT?.PlayerState?.PLAYING || e.data === window.YT?.PlayerState?.BUFFERING || e.data === window.YT?.PlayerState?.CUED) {
+          window.hidePlaylistEndedOverlay();
+        }
+
         if (e.data === window.YT?.PlayerState?.ENDED) {
           // Guard: skip if already handled this video's ended event
           if (_handledEndedForVideo === room.currentVideoId) {
@@ -1641,27 +1665,42 @@ function createYTPlayer() {
           }
           _handledEndedForVideo = room.currentVideoId;
 
-          if (room.isHost && !_isApplyingTrackChange) {
-            const currentIdx = room.playlist.findIndex(t => t.id === room.currentVideoId);
-            const nextIdx = currentIdx + 1;
-
-            if (nextIdx < room.playlist.length) {
-              // Normal: go to next track
-              console.log('[YT] Video ended (host) → triggering next');
-              skipTrack(1);
-            } else {
-              // Playlist exhausted → enter idle state
-              console.log('[YT] Playlist ended (host) → entering idle');
-              room.isIdle = true;
-              room.currentVideoId = null;
-              room.currentTrackIndex = -1;
-              room.isPlaying = false;
-              updateIdleUI();
-            }
-          } else if (!room.isHost) {
-            console.log('[YT] Video ended (listener) → waiting for server sync');
+          if (room.playlist.length <= 0) {
+             window.showPlaylistEndedOverlay();
           } else {
-            console.log('[YT] Video ended during track change → blocked');
+             window.hidePlaylistEndedOverlay();
+
+             if (room.isHost && !_isApplyingTrackChange) {
+               const currentIdx = room.playlist.findIndex(t => t.id === room.currentVideoId);
+               const nextIdx = currentIdx + 1;
+
+               if (nextIdx < room.playlist.length) {
+                 // Normal: go to next track
+                 console.log('[YT] Video ended (host) → triggering next');
+                 if (_isHandlingTrackEnd) return;
+                 _isHandlingTrackEnd = true;
+                 try {
+                   skipTrack(1);
+                 } finally {
+                   setTimeout(() => {
+                     _isHandlingTrackEnd = false;
+                   }, 1000);
+                 }
+               } else {
+                 // Playlist exhausted → enter idle state
+                 console.log('[YT] Playlist ended (host) → entering idle');
+                 room.isIdle = true;
+                 room.currentVideoId = null;
+                 room.currentTrackIndex = -1;
+                 room.isPlaying = false;
+                 window.showPlaylistEndedOverlay();
+               }
+             } else if (!room.isHost) {
+               console.log('[YT] Video ended (listener) → waiting for server sync');
+               // Host sẽ chuyển bài và broadcast sync. Nếu đây là bài cuối, server sẽ broadcast room-idle.
+             } else {
+               console.log('[YT] Video ended during track change → blocked');
+             }
           }
         }
       },
@@ -1906,6 +1945,7 @@ function setupAudioUnlock() {
 
 // ── Load video ───────────────────────────────────────────
 function _loadVideo(videoId, startSeconds, shouldPlay) {
+  window.hidePlaylistEndedOverlay();
   console.log(`[_LOAD-VIDEO] ${videoId} start=${startSeconds}s play=${shouldPlay}`);
 
   if (_initialSyncPending) {
@@ -1975,11 +2015,19 @@ function _loadVideo(videoId, startSeconds, shouldPlay) {
 // 5. Apply play/pause
 // 6. Unlock player
 async function syncPlayerFromRoomState(state) {
+  window.hidePlaylistEndedOverlay();
   if (!state) { console.log('[SYNC] No state'); return; }
 
-  const videoId     = state?.currentVideoId || null;
+  let videoId     = state?.currentVideoId || null;
   const isPlaying   = !!state?.isPlaying;
   const currentTime = Number.isFinite(state?.currentTime) ? state.currentTime : 0;
+
+  // SAFEGUARD: fallback to playlist[0] if currentVideoId is null
+  if (!videoId && room.playlist?.length > 0) {
+    videoId = room.playlist[0].id;
+    if (state) state.currentVideoId = videoId;
+    console.log(`[SYNC][SAFEGUARD] Fallback to playlist[0].id = ${videoId}`);
+  }
 
   console.log(`[SYNC] video=${videoId} play=${isPlaying} time=${currentTime.toFixed(1)}`);
 
@@ -2057,6 +2105,7 @@ function applyPendingRoomState() {
 // HYBRID SYNC: smooth playback NHƯNG session phải cùng timeline
 // Drift lớn phải tự kéo về, action mới nhất phải authoritative
 async function syncVideoState(state) {
+  window.hidePlaylistEndedOverlay();
   if (!state || typeof state !== 'object') { console.log('[VIDEO_SYNC] Invalid'); return; }
 
   const videoId     = state?.currentVideoId || null;
@@ -2405,6 +2454,7 @@ function _hideSyncNotice() {
 
 // ── Handle track changed (different track from host) ──────────
 async function handleTrackChanged(payload) {
+  window.hidePlaylistEndedOverlay();
   if (!payload || typeof payload !== 'object') { console.log('[TRACK_CHANGE] Invalid'); return; }
 
   const videoId     = payload?.currentVideoId || null;
@@ -2889,6 +2939,7 @@ function setupSocket() {
   });
 
   s.on('joined-room', (payload) => {
+    window.hidePlaylistEndedOverlay();
     // Destructure với fallback an toàn
     const roomId          = payload?.roomId          || null;
     const roomName        = payload?.roomName        || 'Midnight Room';
@@ -2960,7 +3011,15 @@ function setupSocket() {
     try { updateHostUI(); } catch (e) { console.error('[HYDRATE][HOST_UI]', e); }
 
     // Load video nếu có
-    const currentVideoId = state?.currentVideoId || null;
+    let currentVideoId = state?.currentVideoId || null;
+    
+    // SAFEGUARD: fallback if currentVideoId is null but playlist has items
+    if (!currentVideoId && playlist && playlist.length > 0) {
+      currentVideoId = playlist[0].id;
+      if (state) state.currentVideoId = currentVideoId;
+      console.log(`[ROOM_STATE_RECEIVED][SAFEGUARD] Fallback to playlist[0].id = ${currentVideoId}`);
+    }
+
     if (currentVideoId) {
       console.log(`[ROOM_STATE_RECEIVED] has video=${currentVideoId} playing=${state?.isPlaying} time=${state?.currentTime}`);
       try { applyInitialRoomState(state); } catch (e) { console.error('[HYDRATE][VIDEO]', e); }
@@ -2971,7 +3030,7 @@ function setupSocket() {
 
     // Show idle UI if room is already idle on join
     if (room.isIdle) {
-      try { updateIdleUI(); } catch (e) { console.error('[HYDRATE][IDLE_UI]', e); }
+      try { window.showPlaylistEndedOverlay?.(); } catch (e) { console.error('[HYDRATE][IDLE_UI]', e); }
     }
     // Welcome message
     if (!window._welcomeShown) {
