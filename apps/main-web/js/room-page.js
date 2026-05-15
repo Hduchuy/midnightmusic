@@ -1689,6 +1689,14 @@ function createYTPlayer() {
                  room.currentVideoId = null;
                  room.currentTrackIndex = -1;
                  room.isPlaying = false;
+                 
+                 // Broadcast state so guests show overlay too
+                 room.socket?.emit('playlist-ended', {
+                   roomId: room.id,
+                   ended: true,
+                   currentVideoId: null
+                 });
+
                  window.showPlaylistEndedOverlay();
                }
              } else if (!room.isHost) {
@@ -2934,6 +2942,19 @@ function setupSocket() {
     }
   });
 
+  s.on('playlist-ended', payload => {
+    console.log('[ROOM][PLAYLIST_ENDED]', payload);
+    room.currentVideoId = null;
+    room.isPlaying = false;
+    room.isIdle = true;
+
+    try {
+      room.ytPlayer?.stopVideo?.();
+    } catch {}
+
+    window.showPlaylistEndedOverlay?.();
+  });
+
   s.on('joined-room', (payload) => {
     window.hidePlaylistEndedOverlay();
     // Destructure với fallback an toàn
@@ -3025,7 +3046,7 @@ function setupSocket() {
     }
 
     // Show idle UI if room is already idle on join
-    if (room.isIdle) {
+    if (room.isIdle || (room.playlist.length === 0 && !currentVideoId)) {
       try { window.showPlaylistEndedOverlay?.(); } catch (e) { console.error('[HYDRATE][IDLE_UI]', e); }
     }
     // Welcome message

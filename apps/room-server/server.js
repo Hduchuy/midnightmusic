@@ -806,6 +806,7 @@ io.on('connection', (socket) => {
         room.updatedAt = Date.now();
         console.log(`[PLAYLIST][ENDED] room=${roomId} → isIdle=true`);
         io.to(roomId).emit('room-idle', { isIdle: true, playlistEnded: true });
+        io.to(roomId).emit('playlist-ended', { roomId, ended: true, currentVideoId: null });
       }
       return;
     }
@@ -858,6 +859,35 @@ io.on('connection', (socket) => {
         room.state.isTrackChanging = false;
       }
     }, 500);
+  });
+
+  // ── PLAYLIST ENDED (From Host Native End) ─────────────────
+  socket.on('playlist-ended', (payload) => {
+    const roomId = socket.roomId;
+    if (!roomId || !rooms.has(roomId)) return;
+    const room = rooms.get(roomId);
+
+    // Permission check
+    const controllerIds = getControllerIds(room);
+    const canControl = room.hostId === socket.id || controllerIds.includes(socket.id);
+    if (!canControl) return;
+
+    console.log(`[PLAYLIST][ENDED_FROM_CLIENT] room=${roomId}`);
+    
+    // Update server state
+    room.isIdle = true;
+    room.state.currentVideoId = null;
+    room.state.currentTrackId = null;
+    room.state.currentTrackIndex = -1;
+    room.state.isPlaying = false;
+    room.state.currentTime = 0;
+    room.state.trackVersion = (room.state.trackVersion || 0) + 1;
+    room.state.syncedAt = Date.now();
+    room.updatedAt = Date.now();
+
+    // Broadcast
+    io.to(roomId).emit('playlist-ended', payload);
+    io.to(roomId).emit('room-idle', { isIdle: true, playlistEnded: true });
   });
 
   // ── VIDEO SYNC (same-track playback) ─────────────────────────────────
