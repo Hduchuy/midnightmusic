@@ -39,9 +39,9 @@ function setPendingAutoplay(value) {
   }
 }
 
-async function attemptSoundCloudResume(reason) {
+async function attemptSoundCloudResume(reason, ignoreVisibility = false) {
   if (!state.soundcloud.active || !state.soundcloud.pendingAutoplay) return;
-  if (document.hidden) return; // Only retry if visible
+  if (document.hidden && !ignoreVisibility) return; // Only retry if visible, unless forced
 
   const now = Date.now();
   if (now - scLastPlayAttemptAt < 2000) return; // Cooldown 2s
@@ -217,12 +217,72 @@ function playNextSoundCloudQueue() {
       isSearchQueue: true, 
       index: nextIndex, 
       queue: queue,
-      isAutoNext: true // Cờ xác nhận đây là luồng tự động chuyển bài
+      isAutoNext: true, // Cờ xác nhận đây là luồng tự động chuyển bài
+      trackId: nextTrack.id
     });
   }
 }
 
 let _isHandlingTrackEnd = false;
+
+function bindSoundCloudWidgetEvents(widget, trackUrl) {
+  // Unbind before binding to prevent duplicate listeners
+  try {
+    widget.unbind(SC.Widget.Events.READY);
+    widget.unbind(SC.Widget.Events.PLAY);
+    widget.unbind(SC.Widget.Events.ERROR);
+    widget.unbind(SC.Widget.Events.FINISH);
+  } catch(e) {}
+  
+  // Bind global READY event
+  widget.bind(SC.Widget.Events.READY, () => {
+    console.log('[SC][READY]');
+    if (state.soundcloud.pendingAutoplay) {
+      setTimeout(() => {
+        attemptSoundCloudResume('ready_autoplay', true); // force resume even if hidden
+      }, 300);
+    }
+  });
+
+  widget.bind(SC.Widget.Events.PLAY, () => {
+    console.log('[SC][PLAY_SUCCESS]');
+    console.log('[SC][PLAY_EVENT]');
+    setPendingAutoplay(false);
+    state.soundcloud.retryCount = 0;
+  });
+
+  // We can also bind ERROR if available (SC Widget API error event)
+  widget.bind(SC.Widget.Events.ERROR, (err) => {
+    console.log('[SC][PLAY_FAILED]', err);
+  });
+
+  widget.bind(SC.Widget.Events.FINISH, () => {
+    console.log('[SC][FINISH]');
+    
+    const now = Date.now();
+    if (scLastFinishedTrackId === trackUrl && now - scLastFinishAt < 2000) {
+       console.log('[SC][FINISH] Duplicate ignored');
+       return;
+    }
+    scLastFinishedTrackId = trackUrl;
+    scLastFinishAt = now;
+    
+    if (_isHandlingTrackEnd) {
+       console.log('[SC][FINISH] Ignored - already handling track end');
+       return;
+    }
+    
+    _isHandlingTrackEnd = true;
+    try {
+      if (state.soundcloud.queue && state.soundcloud.queue.length > 0) {
+        console.log('[SC][NEXT_TRACK]');
+        playNextSoundCloudQueue();
+      }
+    } finally {
+      setTimeout(() => { _isHandlingTrackEnd = false; }, 1000);
+    }
+  });
+}
 
 async function playSoundCloud(urlArg, options = {}){
   // Bỏ qua nếu là event object
@@ -269,16 +329,11 @@ async function playSoundCloud(urlArg, options = {}){
       state.soundcloud.currentEmbed = embedSrc;
       
       console.log('[SC][LOAD_NEXT]', url);
+      state.soundcloud.retryCount = 0;
+      state.soundcloud.currentAutoplayTrackId = options.trackId || url;
+      console.log('[SC][PENDING] true');
       setPendingAutoplay(true);
       
-      // Unbind old handlers before load to prevent leaks
-      try {
-        widget.unbind(SC.Widget.Events.READY);
-        widget.unbind(SC.Widget.Events.PLAY);
-        widget.unbind(SC.Widget.Events.ERROR);
-        widget.unbind(SC.Widget.Events.FINISH);
-      } catch(e) {}
-
       widget.load(url, {
         auto_play: false, // We'll manually play it to track success/failure
         show_artwork: false,
@@ -287,6 +342,9 @@ async function playSoundCloud(urlArg, options = {}){
         show_comments: false,
         show_reposts: false
       });
+      
+      // MUST REBIND after load to prevent dropping listeners in chain autoplay
+      bindSoundCloudWidgetEvents(widget, url);
       
       // Vẫn lấy metadata bình thường
       const meta = await fetchSoundCloudMeta(embedSrc);
@@ -335,6 +393,9 @@ async function playSoundCloud(urlArg, options = {}){
   setSoundCloudMode(true);
   state.soundcloud.currentUrl = url;
   state.soundcloud.currentEmbed = embedSrc;
+  state.soundcloud.retryCount = 0;
+  state.soundcloud.currentAutoplayTrackId = options.trackId || url;
+  console.log('[SC][PENDING] true');
   setPendingAutoplay(true);
   
   // Clear thông tin bài cũ, gán tạm thời
@@ -371,59 +432,7 @@ async function playSoundCloud(urlArg, options = {}){
   // Khởi tạo Widget API an toàn
   if (typeof SC !== 'undefined' && SC.Widget) {
     const widget = SC.Widget(iframe);
-    
-    // Unbind before binding to prevent duplicate listeners
-    widget.unbind(SC.Widget.Events.READY);
-    widget.unbind(SC.Widget.Events.PLAY);
-    widget.unbind(SC.Widget.Events.ERROR);
-    widget.unbind(SC.Widget.Events.FINISH);
-    
-    // Bind global READY event
-    widget.bind(SC.Widget.Events.READY, () => {
-      // If we flagged pendingAutoplay (from isAutoNext flow or initial auto_play issue)
-      if (state.soundcloud.pendingAutoplay) {
-        setTimeout(() => {
-          attemptSoundCloudResume('READY');
-        }, 300);
-      }
-    });
-
-    widget.bind(SC.Widget.Events.PLAY, () => {
-      console.log('[SC][PLAY_SUCCESS]');
-      setPendingAutoplay(false);
-    });
-
-    // We can also bind ERROR if available (SC Widget API error event)
-    widget.bind(SC.Widget.Events.ERROR, (err) => {
-      console.log('[SC][PLAY_FAILED]', err);
-    });
-
-    widget.bind(SC.Widget.Events.FINISH, () => {
-      console.log('[SC][FINISH]');
-      
-      const now = Date.now();
-      if (scLastFinishedTrackId === url && now - scLastFinishAt < 2000) {
-         console.log('[SC][FINISH] Duplicate ignored');
-         return;
-      }
-      scLastFinishedTrackId = url;
-      scLastFinishAt = now;
-      
-      if (_isHandlingTrackEnd) {
-         console.log('[SC][FINISH] Ignored - already handling track end');
-         return;
-      }
-      
-      _isHandlingTrackEnd = true;
-      try {
-        if (state.soundcloud.queue && state.soundcloud.queue.length > 0) {
-          console.log('[SC][NEXT_TRACK]');
-          playNextSoundCloudQueue();
-        }
-      } finally {
-        setTimeout(() => { _isHandlingTrackEnd = false; }, 1000);
-      }
-    });
+    bindSoundCloudWidgetEvents(widget, url);
   }
 
   iframe.addEventListener('load',()=>{
