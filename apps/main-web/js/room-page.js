@@ -53,6 +53,7 @@ window.closeAllPanels = () => document.querySelectorAll('.side-panel').forEach(p
 const room = {
   id: null, socket: null, ytPlayer: null, ytReady: false,
   currentVideoId: null, isPlaying: false, isIdle: false, playlist: [], members: [],
+  playerState: -1, hasEnded: false,
   currentMood: null,  // set from joined-room, used for fallback check
   isHost: false, hostId: null,
   myName: localStorage.getItem('mm_room_username') || 'Guest',
@@ -1650,41 +1651,41 @@ function createYTPlayer() {
           }
         }
 
+        room.playerState = e.data;
+
         if (e.data === window.YT?.PlayerState?.PLAYING || e.data === window.YT?.PlayerState?.BUFFERING || e.data === window.YT?.PlayerState?.CUED) {
+          room.hasEnded = false;
           window.hidePlaylistEndedOverlay();
         }
 
         if (e.data === window.YT?.PlayerState?.ENDED) {
-          // Guard: skip if already handled this video's ended event
-          if (_handledEndedForVideo === room.currentVideoId) {
-            console.log('[YT] ENDDED ignored — already handled for', room.currentVideoId);
+          console.log('[YT][ENDED]');
+          if (_isHandlingTrackEnd) {
+            console.log('[YT][ENDED_DUPLICATE] skipped duplicate');
             return;
           }
-          _handledEndedForVideo = room.currentVideoId;
+          _isHandlingTrackEnd = true;
+          try {
+            room.hasEnded = true;
 
-          if (room.playlist.length <= 0) {
-            window.showPlaylistEndedOverlay();
-          } else {
-            window.hidePlaylistEndedOverlay();
+            if (!canControlPlayer()) {
+              console.log('[YT][AUTONEXT_SKIPPED_GUEST] guest ignored');
+              return;
+            }
 
-            if (room.isHost && !_isApplyingTrackChange) {
+            if (room.playlist.length <= 0) {
+              console.log('[PLAYLIST][EMPTY]');
+              window.showPlaylistEndedOverlay();
+            } else {
+              window.hidePlaylistEndedOverlay();
+
               const currentIdx = room.playlist.findIndex(t => t.id === room.currentVideoId);
               const nextIdx = currentIdx + 1;
 
               if (nextIdx < room.playlist.length) {
-                // Normal: go to next track
-                console.log('[YT] Video ended (host) → triggering next');
-                if (_isHandlingTrackEnd) return;
-                _isHandlingTrackEnd = true;
-                try {
-                  skipTrack(1);
-                } finally {
-                  setTimeout(() => {
-                    _isHandlingTrackEnd = false;
-                  }, 1000);
-                }
+                console.log('[PLAYLIST][NEXT_TRACK] triggering next');
+                skipTrack(1);
               } else {
-                // Playlist exhausted → enter idle state
                 console.log('[YT] Playlist ended (host) → entering idle');
                 room.isIdle = true;
                 room.currentVideoId = null;
@@ -1700,12 +1701,11 @@ function createYTPlayer() {
                 
                 window.showPlaylistEndedOverlay();
               }
-            } else if (!room.isHost) {
-              console.log('[YT] Video ended (listener) → waiting for server sync');
-              // Host sẽ chuyển bài và broadcast sync. Nếu đây là bài cuối, server sẽ broadcast room-idle.
-            } else {
-              console.log('[YT] Video ended during track change → blocked');
             }
+          } finally {
+            setTimeout(() => {
+              _isHandlingTrackEnd = false;
+            }, 1000);
           }
         }
       },
@@ -1987,6 +1987,8 @@ function _loadVideo(videoId, startSeconds, shouldPlay) {
 
   console.log('[LOAD-VIDEO] Calling loadVideoById');
   p.loadVideoById({ videoId, startSeconds: startSeconds || 0, suggestedQuality: 'hd1080' });
+  room.playerState = -1;
+  room.hasEnded = false;
 
   // Chờ video load rồi seek/play
   waitForVideoLoad(8000).then(() => {
@@ -2032,6 +2034,15 @@ async function syncPlayerFromRoomState(state) {
     videoId = room.playlist[0].id;
     if (state) state.currentVideoId = videoId;
     console.log(`[SYNC][SAFEGUARD] Fallback to playlist[0].id = ${videoId}`);
+  }
+
+  if (state?.currentVideoId === room.currentVideoId && room.playerState === window.YT?.PlayerState?.ENDED) {
+     console.log('[SYNC][IGNORE_REPLAY_ENDED] ignore replay ended video');
+     return;
+  }
+  if (room.hasEnded) {
+     console.log('[SYNC] ignored because room.hasEnded');
+     return;
   }
 
   console.log(`[SYNC] video=${videoId} play=${isPlaying} time=${currentTime.toFixed(1)}`);
@@ -2124,6 +2135,15 @@ async function syncVideoState(state) {
 
   if (!videoId) return;
   if (videoId !== room.currentVideoId) { console.log('[VIDEO_SYNC] Track mismatch'); return; }
+
+  if (state?.currentVideoId === room.currentVideoId && room.playerState === window.YT?.PlayerState?.ENDED) {
+     console.log('[SYNC][IGNORE_REPLAY_ENDED] ignore replay ended video');
+     return;
+  }
+  if (room.hasEnded && state?.currentVideoId === room.currentVideoId) {
+     console.log('[SYNC] ignored because room.hasEnded');
+     return;
+  }
 
   // ── Overlay: pause ALL sync except force-hard overlay_resync ──
   const forceHardSync = !!(state?.forceHardSync || state?.syncType === 'overlay_resync');
@@ -2472,6 +2492,15 @@ async function handleTrackChanged(payload) {
   console.log(`[TRACK_CHANGE] video=${videoId} play=${isPlaying} v=${version} actionId=${actionId}`);
 
   if (!videoId) return;
+
+  if (payload?.currentVideoId === room.currentVideoId && room.playerState === window.YT?.PlayerState?.ENDED) {
+     console.log('[SYNC][IGNORE_REPLAY_ENDED] ignore replay ended video');
+     return;
+  }
+  if (room.hasEnded && payload?.currentVideoId === room.currentVideoId) {
+     console.log('[SYNC] ignored because room.hasEnded');
+     return;
+  }
 
   // Deduplication
   if (version >= 0 && version <= _lastAppliedTrackVersion) {
