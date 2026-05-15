@@ -7,11 +7,11 @@
 /* ── Shims for mood-manager.js / visualizer.js ── */
 window.state = {
   currentMood: 'chill',
-  effects: { 
-    suspended: false, 
+  effects: {
+    suspended: false,
     active: ['stars'],
     mobilePerformanceMode: (window.innerWidth <= 768) || (navigator.deviceMemory && navigator.deviceMemory <= 4),
-    tier: (function() {
+    tier: (function () {
       const t = typeof getPerformanceTier === 'function' ? getPerformanceTier() : 'mid';
       document.body.classList.add(`tier-${t}`);
       return t;
@@ -22,32 +22,32 @@ window.state = {
 };
 window.$ = {
   canvas: {
-    stars:   document.getElementById('stars'),
-    rain:    document.getElementById('rain'),
+    stars: document.getElementById('stars'),
+    rain: document.getElementById('rain'),
     bubbles: document.getElementById('bubbles'),
-    leaves:  document.getElementById('leaves'),
+    leaves: document.getElementById('leaves'),
     meteors: document.getElementById('meteors'),
   },
-  notif:   document.getElementById('notif'),
-  welcome: { classList: { add: () => {}, remove: () => {} } },
-  app:     { classList: { add: () => {}, remove: () => {} } },
+  notif: document.getElementById('notif'),
+  welcome: { classList: { add: () => { }, remove: () => { } } },
+  app: { classList: { add: () => { }, remove: () => { } } },
   moodChip: document.getElementById('mood-chip') || { textContent: '' },
 };
-window.MOODS     = ['sad','happy','chill','sleep','study'];
+window.MOODS = ['sad', 'happy', 'chill', 'sleep', 'study'];
 window.MOOD_META = {
-  sad:  { emoji: '🌧', label: 'Sad'   },
-  happy:{ emoji: '☀️', label: 'Happy' },
-  chill:{ emoji: '🌙', label: 'Chill' },
-  sleep:{ emoji: '✨', label: 'Sleep' },
-  study:{ emoji: '📚', label: 'Study' },
+  sad: { emoji: '🌧', label: 'Sad' },
+  happy: { emoji: '☀️', label: 'Happy' },
+  chill: { emoji: '🌙', label: 'Chill' },
+  sleep: { emoji: '✨', label: 'Sleep' },
+  study: { emoji: '📚', label: 'Study' },
 };
-window.getMoodPlaylist   = () => ({ id:'room', mood:'room', trackIds:[] });
-window.getRandomTrackId  = () => null;
+window.getMoodPlaylist = () => ({ id: 'room', mood: 'room', trackIds: [] });
+window.getRandomTrackId = () => null;
 window.getPlaylistTrackIds = () => [];
-window.playTrackById     = async () => {};
-window.updatePlayerUI    = () => {};
-window.syncPlayerUI      = () => {};
-window.closeAllPanels    = () => document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('open'));
+window.playTrackById = async () => { };
+window.updatePlayerUI = () => { };
+window.syncPlayerUI = () => { };
+window.closeAllPanels = () => document.querySelectorAll('.side-panel').forEach(p => p.classList.remove('open'));
 
 /* ── Room state ── */
 const room = {
@@ -96,7 +96,7 @@ let _mobileParticlesPaused = false;
 let _lastProgressUpdate = 0;
 let _lastQueueRender = 0;
 const MOBILE_PROGRESS_THROTTLE = 1000; // Only update progress bar every 1s on mobile
-const MOBILE_RENDER_THROTTLE   = 2000; // Only re-render queue every 2s on mobile
+const MOBILE_RENDER_THROTTLE = 2000; // Only re-render queue every 2s on mobile
 
 /* ── Throttle helpers ─────────────────────────────────────── */
 function shouldUpdateProgress() {
@@ -123,9 +123,9 @@ let _lastAppliedTrackVersion = 0;
 let _lastAppliedTrackId = null;
 let _isApplyingTrackChange = false;
 let _isRemoteSync = false;
-let _pendingVideoId  = null;
-let _pendingTime     = 0;
-let _pendingPlaying  = false;
+let _pendingVideoId = null;
+let _pendingTime = 0;
+let _pendingPlaying = false;
 let _forceSourceLoadTimer = null;
 let _ytPlayerInitialized = false;
 let _qualityAppliedForVideoId = null;
@@ -224,7 +224,7 @@ function showRoomDeadMessage(msg) {
   _roomIsValid = false;
 
   // Stop any player
-  try { room.ytPlayer?.stopVideo?.(); } catch (_) {}
+  try { room.ytPlayer?.stopVideo?.(); } catch (_) { }
 
   // Show toast
   showToast(msg, 'warning');
@@ -244,7 +244,7 @@ function autoplayVideo(p) {
   p.playVideo();
 }
 
-  // ── AUDIO UNLOCK STATE ─────────────────────────────────
+// ── AUDIO UNLOCK STATE ─────────────────────────────────
 let _audioUnlocked = false;
 let _hasUserInteracted = false;
 
@@ -418,58 +418,58 @@ function showPermissionDeniedToast(action = 'hành động này') {
 /** Timer to apply default mood if socket never fires */
 /* ── DOM cache ── */
 const el = {
-  roomIdDisplay:  document.getElementById('room-id-display'),
+  roomIdDisplay: document.getElementById('room-id-display'),
   roomNameDisplay: document.getElementById('room-name-display'),
   memberCountNum: document.getElementById('member-count-num'),
   // Member panel
-  memberListBtn:   document.getElementById('member-list-btn'),
-  memberPanel:    document.getElementById('member-panel'),
+  memberListBtn: document.getElementById('member-list-btn'),
+  memberPanel: document.getElementById('member-panel'),
   memberPanelClose: document.getElementById('member-panel-close'),
-  memberList:      document.getElementById('member-list'),
+  memberList: document.getElementById('member-list'),
   // Player (homepage IDs)
-  songTitle:      document.getElementById('song-title'),
-  songMood:       document.getElementById('song-mood'),
-  dockThumb:      document.querySelector('.room-dock-thumb'),
-  playBtn:        document.getElementById('play-btn'),
-  prevBtn:        document.getElementById('prev-btn'),
-  nextBtn:        document.getElementById('next-btn'),
-  volumeBtn:      document.getElementById('volume-btn'),
-  musicProgress:  document.getElementById('music-progress'),
-  currentTime:    document.getElementById('current-time'),
-  durationTime:   document.getElementById('duration-time'),
-  notif:          document.getElementById('notif'),
+  songTitle: document.getElementById('song-title'),
+  songMood: document.getElementById('song-mood'),
+  dockThumb: document.querySelector('.room-dock-thumb'),
+  playBtn: document.getElementById('play-btn'),
+  prevBtn: document.getElementById('prev-btn'),
+  nextBtn: document.getElementById('next-btn'),
+  volumeBtn: document.getElementById('volume-btn'),
+  musicProgress: document.getElementById('music-progress'),
+  currentTime: document.getElementById('current-time'),
+  durationTime: document.getElementById('duration-time'),
+  notif: document.getElementById('notif'),
   // Panel tabs
-  plistTabs:      document.querySelectorAll('.plist-tab'),
+  plistTabs: document.querySelectorAll('.plist-tab'),
   // Search refs — populated in setupSearch() after DOM is ready
-  ytSearchInput:  null,
-  ytResults:      null,  // = #search-results-list (search tab scroll container)
-  ytSearchBtn:    null,
-  ytRefreshBtn:   null,
+  ytSearchInput: null,
+  ytResults: null,  // = #search-results-list (search tab scroll container)
+  ytSearchBtn: null,
+  ytRefreshBtn: null,
   // Playlist
-  sharedQueue:    document.getElementById('shared-queue'),
-  queueCount:     document.getElementById('queue-count'),
+  sharedQueue: document.getElementById('shared-queue'),
+  queueCount: document.getElementById('queue-count'),
   // Now Playing bar (playlist tab)
-  nowPlayingBar:  document.getElementById('now-playing-bar'),
-  npbThumb:       document.getElementById('npb-thumb'),
-  npbTitle:       document.getElementById('npb-title'),
-  npbArtist:      document.getElementById('npb-artist'),
+  nowPlayingBar: document.getElementById('now-playing-bar'),
+  npbThumb: document.getElementById('npb-thumb'),
+  npbTitle: document.getElementById('npb-title'),
+  npbArtist: document.getElementById('npb-artist'),
   // Chat
-  roomMessages:   document.getElementById('room-messages'),
-  chatInput:      document.getElementById('chat-input'),
-  sendMsgBtn:     document.getElementById('send-msg-btn'),
+  roomMessages: document.getElementById('room-messages'),
+  chatInput: document.getElementById('chat-input'),
+  sendMsgBtn: document.getElementById('send-msg-btn'),
   // Mood
-  toggleMoodBtn:  document.getElementById('toggle-mood-btn'),
-  moodPanel:      document.getElementById('mood-panel'),
+  toggleMoodBtn: document.getElementById('toggle-mood-btn'),
+  moodPanel: document.getElementById('mood-panel'),
   moodPanelClose: document.getElementById('mood-panel-close'),
   // Leave + reactions
-  leaveBtn:       document.getElementById('leave-btn'),
-  reactBtns:      document.querySelectorAll('.react-btn'),
-  moodSyncBtns:   document.querySelectorAll('.mood-sync-btn'),
+  leaveBtn: document.getElementById('leave-btn'),
+  reactBtns: document.querySelectorAll('.react-btn'),
+  moodSyncBtns: document.querySelectorAll('.mood-sync-btn'),
   // Suggestion chips (inside search tab)
-  chips:          document.querySelectorAll('.plist-chip'),
+  chips: document.querySelectorAll('.plist-chip'),
   // Player toggle
-  playerToggle:   document.getElementById('player-toggle'),
-  bottom:         document.getElementById('bottom'),
+  playerToggle: document.getElementById('player-toggle'),
+  bottom: document.getElementById('bottom'),
 };
 
 /* ============================================================
@@ -524,14 +524,14 @@ function hidePlayer() {
   playerMinimized = true;
   el.bottom?.classList.add('hidden-player');
   el.playerToggle?.setAttribute('aria-label', 'Expand player');
-  try { localStorage.setItem('mm_room_player_minimized', '1'); } catch {}
+  try { localStorage.setItem('mm_room_player_minimized', '1'); } catch { }
 }
 
 function showPlayer() {
   playerMinimized = false;
   el.bottom?.classList.remove('hidden-player');
   el.playerToggle?.setAttribute('aria-label', 'Minimize player');
-  try { localStorage.setItem('mm_room_player_minimized', '0'); } catch {}
+  try { localStorage.setItem('mm_room_player_minimized', '0'); } catch { }
 }
 
 function togglePlayerVisibility() {
@@ -543,7 +543,7 @@ function setupPlayerToggle() {
   // Restore state from last session
   try {
     if (localStorage.getItem('mm_room_player_minimized') === '1') hidePlayer();
-  } catch {}
+  } catch { }
 }
 
 /* ── Panel Tabs ── */
@@ -557,7 +557,7 @@ function setupPlistTabs() {
   el.plistTabs.forEach(tab => {
     tab.addEventListener('click', () => {
       window._currentTab = tab.dataset.tab;
-      
+
       // Clear unread state if chat tab is opened
       if (window._currentTab === 'chat') {
         tab.classList.remove('unread');
@@ -611,7 +611,7 @@ function applyMood(mood, { remote = false } = {}) {
   // On mobile: skip all particle effects to prioritize video playback performance
   if (IS_MOBILE) {
     // Only update mood class and UI — skip canvas effects entirely
-    document.body.classList.remove('mood-sad','mood-happy','mood-chill','mood-sleep','mood-study');
+    document.body.classList.remove('mood-sad', 'mood-happy', 'mood-chill', 'mood-sleep', 'mood-study');
     document.body.classList.add(`mood-${mood}`);
     const meta = window.MOOD_META?.[mood];
     if (meta && window.$?.moodChip) {
@@ -628,7 +628,7 @@ function applyMood(mood, { remote = false } = {}) {
   if (typeof effects !== 'undefined') effects.resumeAll();
 
   // 1. Body class → drives CSS theme variables
-  document.body.classList.remove('mood-sad','mood-happy','mood-chill','mood-sleep','mood-study');
+  document.body.classList.remove('mood-sad', 'mood-happy', 'mood-chill', 'mood-sleep', 'mood-study');
   document.body.classList.add(`mood-${mood}`);
 
   // 2. Mood chip label
@@ -642,9 +642,9 @@ function applyMood(mood, { remote = false } = {}) {
   const _set = (el, val) => { if (el) el.style.opacity = val; };
 
   // Hide all first
-  _set(cvs.rain,    0);
+  _set(cvs.rain, 0);
   _set(cvs.bubbles, 0);
-  _set(cvs.leaves,  0);
+  _set(cvs.leaves, 0);
   _set(cvs.meteors, 0);
 
   // Sleep / Study decorations
@@ -655,22 +655,22 @@ function applyMood(mood, { remote = false } = {}) {
 
   // Stop previous loops
   if (typeof effects !== 'undefined') {
-    ['rain','bubbles','leaves','meteors'].forEach(n => effects.stop?.(n));
+    ['rain', 'bubbles', 'leaves', 'meteors'].forEach(n => effects.stop?.(n));
   }
 
   // Start the correct effect
   const effectMap = {
-    sad:   () => { _set(cvs.rain,    0.55); if(typeof startRain    === 'function') startRain();    if(typeof effects !== 'undefined') effects.start?.('rain'); },
-    happy: () => { _set(cvs.bubbles, 0.80); if(typeof startBubbles === 'function') startBubbles(); if(typeof effects !== 'undefined') effects.start?.('bubbles'); },
-    chill: () => { _set(cvs.leaves,  0.90); if(typeof startLeaves  === 'function') startLeaves();  if(typeof effects !== 'undefined') effects.start?.('leaves'); },
+    sad: () => { _set(cvs.rain, 0.55); if (typeof startRain === 'function') startRain(); if (typeof effects !== 'undefined') effects.start?.('rain'); },
+    happy: () => { _set(cvs.bubbles, 0.80); if (typeof startBubbles === 'function') startBubbles(); if (typeof effects !== 'undefined') effects.start?.('bubbles'); },
+    chill: () => { _set(cvs.leaves, 0.90); if (typeof startLeaves === 'function') startLeaves(); if (typeof effects !== 'undefined') effects.start?.('leaves'); },
     sleep: () => {
       _set(cvs.meteors, 0.90);
-      if(typeof startMeteors === 'function') startMeteors();
-      if(typeof effects !== 'undefined') effects.start?.('meteors');
-      if(sleepDecor) { sleepDecor.classList.remove('hidden-decor'); sleepDecor.style.opacity = 1; }
+      if (typeof startMeteors === 'function') startMeteors();
+      if (typeof effects !== 'undefined') effects.start?.('meteors');
+      if (sleepDecor) { sleepDecor.classList.remove('hidden-decor'); sleepDecor.style.opacity = 1; }
     },
     study: () => {
-      if(studyDecor) { studyDecor.classList.remove('hidden-decor'); studyDecor.style.opacity = 0.95; }
+      if (studyDecor) { studyDecor.classList.remove('hidden-decor'); studyDecor.style.opacity = 0.95; }
     },
   };
   effectMap[mood]?.();
@@ -696,15 +696,15 @@ function applyMood(mood, { remote = false } = {}) {
 /** Update active highlight on mood-sync-btn buttons */
 
 /* ── YouTube Search (on Enter / button click — NOT realtime) ── */
-let _lastQuery        = '';
+let _lastQuery = '';
 let _lastContinuation = null;
 
 function setupSearch() {
   // Bind DOM refs (in new Search tab)
   el.ytSearchInput = document.getElementById('yt-search-input');
-  el.ytResults     = document.getElementById('search-results-list'); // scroll container in Search tab
-  el.ytSearchBtn   = document.getElementById('yt-search-btn');
-  el.ytRefreshBtn  = document.getElementById('yt-refresh-btn');
+  el.ytResults = document.getElementById('search-results-list'); // scroll container in Search tab
+  el.ytSearchBtn = document.getElementById('yt-search-btn');
+  el.ytRefreshBtn = document.getElementById('yt-refresh-btn');
 
   // Search on Enter
   el.ytSearchInput?.addEventListener('keydown', e => {
@@ -767,7 +767,7 @@ async function doSearch(q) {
   showResultsLoading(`Đang tìm "${q}"...`);
   try {
     const url = window.CONFIG.YT_SEARCH_URL + `?q=${encodeURIComponent(q)}`;
-    const res  = await fetch(url);
+    const res = await fetch(url);
     const data = await res.json();
     _lastContinuation = data.nextPageToken || null;
     renderResults(data.collection || [], `Kết quả: "${q}"`);
@@ -781,7 +781,7 @@ async function doSearchContinuation(token) {
   showResultsLoading('Đang tải thêm...');
   try {
     const url = window.CONFIG.YT_SEARCH_URL + `?q=${encodeURIComponent(_lastQuery)}&continuation=${encodeURIComponent(token)}`;
-    const res  = await fetch(url);
+    const res = await fetch(url);
     const data = await res.json();
     _lastContinuation = data.nextPageToken || null;
     renderResults(data.collection || [], `Kết quả khác: "${_lastQuery}"`);
@@ -824,7 +824,7 @@ function renderResults(items, label) {
 
   const fragment = document.createDocumentFragment();
   items.forEach(item => {
-    const inQueue   = isTrackInPlaylist(item.id);
+    const inQueue = isTrackInPlaylist(item.id);
     const isPlaying = item.id === room.currentVideoId;
     const div = document.createElement('div');
     div.className = `yt-result-item ${isPlaying ? 'playing' : ''}`;
@@ -846,9 +846,9 @@ function renderResults(items, label) {
         title="${inQueue ? 'Đã có trong playlist' : 'Thêm vào playlist'}"
         aria-label="${inQueue ? 'Đã có trong playlist' : 'Thêm vào playlist'}">
         ${inQueue
-          ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`
-          : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`
-        }
+        ? `<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>`
+        : `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>`
+      }
       </button>`;
     fragment.appendChild(div);
   });
@@ -861,10 +861,10 @@ function renderResults(items, label) {
     const row = e.target.closest('.yt-result-item');
     if (!row) return;
 
-    const id     = row.dataset.id;
-    const title  = decodeURIComponent(row.dataset.title);
+    const id = row.dataset.id;
+    const title = decodeURIComponent(row.dataset.title);
     const author = decodeURIComponent(row.dataset.author);
-    const thumb  = row.dataset.thumb;
+    const thumb = row.dataset.thumb;
 
     if (btn) {
       // ── "+ Add" button: only add to playlist, do NOT play ──
@@ -927,8 +927,8 @@ function _syncSearchActiveUI(activeId) {
 
       if (isActive && !existingBars && meta) {
         meta.insertAdjacentHTML('afterbegin',
-          `<span class="yt-eq-bars">`+
-          `<span></span><span></span><span></span>`+
+          `<span class="yt-eq-bars">` +
+          `<span></span><span></span><span></span>` +
           `</span>`);
       } else if (!isActive && existingBars) {
         existingBars.remove();
@@ -1169,16 +1169,16 @@ function playTrack(id) {
 /* ── Player meta ── */
 function updatePlayerMeta(videoId) {
   const t = room.playlist.find(t => t.id === videoId);
-  const title  = t?.title  || 'YouTube';
+  const title = t?.title || 'YouTube';
   const author = t?.author || videoId;
 
   // Thumbnail: prefer maxresdefault → hqdefault → mqdefault
   const bestThumb = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-  const hqThumb   = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
-  const mqThumb   = t?.thumb || `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
+  const hqThumb = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+  const mqThumb = t?.thumb || `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
 
   if (el.songTitle) el.songTitle.textContent = title;
-  if (el.songMood)  el.songMood.textContent  = author;
+  if (el.songMood) el.songMood.textContent = author;
   if (el.dockThumb) {
     el.dockThumb.src = bestThumb;
     el.dockThumb.style.display = 'block';
@@ -1211,11 +1211,11 @@ function updateNowPlayingBar(videoId, title, author, thumb) {
   bar.style.transform = 'translateY(-4px)';
 
   requestAnimationFrame(() => {
-    if (el.npbTitle)  el.npbTitle.textContent  = title  || '—';
+    if (el.npbTitle) el.npbTitle.textContent = title || '—';
     if (el.npbArtist) el.npbArtist.textContent = author || '—';
     if (el.npbThumb) {
       const best = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-      const hq   = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+      const hq = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
       el.npbThumb.src = thumb || best;
       el.npbThumb.onerror = () => {
         el.npbThumb.onerror = () => { el.npbThumb.src = hq; el.npbThumb.onerror = null; };
@@ -1227,24 +1227,25 @@ function updateNowPlayingBar(videoId, title, author, thumb) {
     // Trigger reflow then fade in
     requestAnimationFrame(() => {
       bar.style.transition = 'opacity .25s ease, transform .25s ease';
-      bar.style.opacity    = '1';
-      bar.style.transform  = 'translateY(0)';
+      bar.style.opacity = '1';
+      bar.style.transform = 'translateY(0)';
     });
   });
 }
 
 /* ── Playlist Ended Overlay Helpers ──────────────────────────────────────────── */
-window.hidePlaylistEndedOverlay = function() {
+window.hidePlaylistEndedOverlay = function () {
   const overlay = document.getElementById('playlist-ended-overlay') || document.querySelector('.playlist-ended-overlay');
   if (!overlay) return;
 
+  console.log('[PLAYLIST_ENDED][HIDE_OVERLAY]');
   overlay.classList.remove('show');
   document.body.classList.remove('playlist-ended');
 };
 
-window.showPlaylistEndedOverlay = function() {
+window.showPlaylistEndedOverlay = function () {
   if (room?.currentVideoId || room?.isPlaying) {
-     return;
+    return;
   }
 
   const overlay = document.getElementById('playlist-ended-overlay') || document.querySelector('.playlist-ended-overlay');
@@ -1437,7 +1438,7 @@ function updatePlayBtn() {
 
 /* ── Progress loop ── */
 const HEARTBEAT_INTERVAL_DESKTOP = 3000;
-const HEARTBEAT_INTERVAL_MOBILE  = 15000;  // Much less aggressive on mobile
+const HEARTBEAT_INTERVAL_MOBILE = 15000;  // Much less aggressive on mobile
 const HEARTBEAT_INTERVAL = IS_MOBILE ? HEARTBEAT_INTERVAL_MOBILE : HEARTBEAT_INTERVAL_DESKTOP;
 
 function startProgressLoop() {
@@ -1454,8 +1455,8 @@ function startProgressLoop() {
       const dur = p.getDuration?.() || 0;
       if (dur > 0) {
         if (el.musicProgress) el.musicProgress.value = (cur / dur) * 100;
-        if (el.currentTime)   el.currentTime.textContent = formatTime(cur);
-        if (el.durationTime)  el.durationTime.textContent = formatTime(dur);
+        if (el.currentTime) el.currentTime.textContent = formatTime(cur);
+        if (el.durationTime) el.durationTime.textContent = formatTime(dur);
       }
     }
 
@@ -1482,7 +1483,7 @@ function startProgressLoop() {
 function formatTime(s) {
   if (!s || isNaN(s)) return '0:00';
   const m = Math.floor(s / 60), sec = Math.floor(s % 60);
-  return `${m}:${sec.toString().padStart(2,'0')}`;
+  return `${m}:${sec.toString().padStart(2, '0')}`;
 }
 
 /* ── YouTube IFrame API ── */
@@ -1499,8 +1500,8 @@ function formatTime(s) {
 // Higher qualities (4K/1440p) are intentionally excluded from auto-selection
 // so users with slower connections are not forced into them.
 // Users can always manually select higher quality via YouTube's native settings menu.
-const QUALITY_TARGET  = 'hd1080';                               // ideal quality
-const QUALITY_BELOW   = ['hd720', 'large', 'medium', 'small']; // fallbacks, best-first
+const QUALITY_TARGET = 'hd1080';                               // ideal quality
+const QUALITY_BELOW = ['hd720', 'large', 'medium', 'small']; // fallbacks, best-first
 const QUALITY_RETRY_DELAYS = [800, 1500, 3000, 5000];           // ms — increasingly longer
 
 function _applyMaxQuality(retryCount = 0) {
@@ -1541,7 +1542,7 @@ function _applyMaxQuality(retryCount = 0) {
   if (chosen && current !== chosen) {
     p.setPlaybackQuality?.(chosen);
     // setPlaybackQualityRange deprecated — wrap in try/catch
-    try { p.setPlaybackQualityRange?.(chosen, chosen); } catch (_) {}
+    try { p.setPlaybackQualityRange?.(chosen, chosen); } catch (_) { }
     console.log('[YT Quality] ✓ Applied:', chosen);
 
     // One follow-up check in case YouTube overrides our setting
@@ -1582,20 +1583,20 @@ function createYTPlayer() {
 
   room.ytPlayer = new YT.Player('youtube-player', {
     height: '100%',
-    width:  '100%',
+    width: '100%',
     videoId: '',
     playerVars: {
-      autoplay:       0,
-      controls:       1,  // 1 = show YT native controls (quality gear accessible)
-      disablekb:      1,
+      autoplay: 0,
+      controls: 1,  // 1 = show YT native controls (quality gear accessible)
+      disablekb: 1,
       modestbranding: 1,
-      rel:            0,
-      fs:             0,
+      rel: 0,
+      fs: 0,
       iv_load_policy: 3,
-      playsinline:    1,
-      enablejsapi:    1,
-      origin:         origin,
-      vq:             IS_MOBILE ? 'medium' : 'hd1080',
+      playsinline: 1,
+      enablejsapi: 1,
+      origin: origin,
+      vq: IS_MOBILE ? 'medium' : 'hd1080',
     },
     events: {
       onReady: () => {
@@ -1611,13 +1612,13 @@ function createYTPlayer() {
         if (IS_MOBILE) {
           try {
             room.ytPlayer?.setPlaybackQualityRange?.('small', 'medium');
-          } catch (_) {}
+          } catch (_) { }
         }
 
         applyPendingRoomState();
       },
       onStateChange: e => {
-        const states = { [-1]:'unstarted', 0:'ended', 1:'playing', 2:'paused', 3:'buffering', 5:'cued' };
+        const states = { [-1]: 'unstarted', 0: 'ended', 1: 'playing', 2: 'paused', 3: 'buffering', 5: 'cued' };
         console.log('[YT] State changed →', states[e.data] ?? e.data);
         updatePlayBtn();
 
@@ -1662,49 +1663,49 @@ function createYTPlayer() {
           _handledEndedForVideo = room.currentVideoId;
 
           if (room.playlist.length <= 0) {
-             window.showPlaylistEndedOverlay();
+            window.showPlaylistEndedOverlay();
           } else {
-             window.hidePlaylistEndedOverlay();
+            window.hidePlaylistEndedOverlay();
 
-             if (room.isHost && !_isApplyingTrackChange) {
-               const currentIdx = room.playlist.findIndex(t => t.id === room.currentVideoId);
-               const nextIdx = currentIdx + 1;
+            if (room.isHost && !_isApplyingTrackChange) {
+              const currentIdx = room.playlist.findIndex(t => t.id === room.currentVideoId);
+              const nextIdx = currentIdx + 1;
 
-               if (nextIdx < room.playlist.length) {
-                 // Normal: go to next track
-                 console.log('[YT] Video ended (host) → triggering next');
-                 if (_isHandlingTrackEnd) return;
-                 _isHandlingTrackEnd = true;
-                 try {
-                   skipTrack(1);
-                 } finally {
-                   setTimeout(() => {
-                     _isHandlingTrackEnd = false;
-                   }, 1000);
-                 }
-               } else {
-                 // Playlist exhausted → enter idle state
-                 console.log('[YT] Playlist ended (host) → entering idle');
-                 room.isIdle = true;
-                 room.currentVideoId = null;
-                 room.currentTrackIndex = -1;
-                 room.isPlaying = false;
-                 
-                 // Broadcast state so guests show overlay too
-                 room.socket?.emit('playlist-ended', {
-                   roomId: room.id,
-                   ended: true,
-                   currentVideoId: null
-                 });
-
-                 window.showPlaylistEndedOverlay();
-               }
-             } else if (!room.isHost) {
-               console.log('[YT] Video ended (listener) → waiting for server sync');
-               // Host sẽ chuyển bài và broadcast sync. Nếu đây là bài cuối, server sẽ broadcast room-idle.
-             } else {
-               console.log('[YT] Video ended during track change → blocked');
-             }
+              if (nextIdx < room.playlist.length) {
+                // Normal: go to next track
+                console.log('[YT] Video ended (host) → triggering next');
+                if (_isHandlingTrackEnd) return;
+                _isHandlingTrackEnd = true;
+                try {
+                  skipTrack(1);
+                } finally {
+                  setTimeout(() => {
+                    _isHandlingTrackEnd = false;
+                  }, 1000);
+                }
+              } else {
+                // Playlist exhausted → enter idle state
+                console.log('[YT] Playlist ended (host) → entering idle');
+                room.isIdle = true;
+                room.currentVideoId = null;
+                room.currentTrackIndex = -1;
+                room.isPlaying = false;
+                
+                // Emitting the event directly to bypass playback stale checks
+                room.socket?.emit('playlist-ended', {
+                  roomId: room.id,
+                  ended: true,
+                  currentVideoId: null
+                });
+                
+                window.showPlaylistEndedOverlay();
+              }
+            } else if (!room.isHost) {
+              console.log('[YT] Video ended (listener) → waiting for server sync');
+              // Host sẽ chuyển bài và broadcast sync. Nếu đây là bài cuối, server sẽ broadcast room-idle.
+            } else {
+              console.log('[YT] Video ended during track change → blocked');
+            }
           }
         }
       },
@@ -1713,7 +1714,7 @@ function createYTPlayer() {
         console.warn('[YT] Player error code:', code, '| videoId:', room.currentVideoId);
 
         const nonEmbeddable = (code === 101 || code === 150);
-        const notFound      = (code === 100 || code === 2);
+        const notFound = (code === 100 || code === 2);
 
         if (nonEmbeddable) {
           showToast('⚠️ Video này không thể phát (bị chặn nhúng)', 'warning');
@@ -1829,7 +1830,7 @@ function waitForPlayingState(timeoutMs = 10000) {
           clearInterval(interval);
           reject(new Error('Playing state timeout'));
         }
-      } catch (e) {}
+      } catch (e) { }
     }, 150);
   });
 }
@@ -1954,16 +1955,16 @@ function _loadVideo(videoId, startSeconds, shouldPlay) {
 
   if (_initialSyncPending) {
     console.log('[_LOAD-VIDEO][SKIP] initial sync pending — defer to server state');
-    _pendingVideoId  = videoId;
-    _pendingTime    = startSeconds || 0;
+    _pendingVideoId = videoId;
+    _pendingTime = startSeconds || 0;
     _pendingPlaying = shouldPlay;
     return;
   }
 
   if (!room.ytPlayer || !room.ytReady) {
     console.log('[_LOAD-VIDEO][SKIP] player not ready ytPlayer=' + !!room.ytPlayer + ' ytReady=' + !!room.ytReady);
-    _pendingVideoId  = videoId;
-    _pendingTime    = startSeconds || 0;
+    _pendingVideoId = videoId;
+    _pendingTime = startSeconds || 0;
     _pendingPlaying = shouldPlay;
     return;
   }
@@ -1980,8 +1981,8 @@ function _loadVideo(videoId, startSeconds, shouldPlay) {
 
   // Load new video
   _qualityAppliedForVideoId = null;
-  _pendingVideoId  = videoId;
-  _pendingTime    = startSeconds || 0;
+  _pendingVideoId = videoId;
+  _pendingTime = startSeconds || 0;
   _pendingPlaying = shouldPlay;
 
   console.log('[LOAD-VIDEO] Calling loadVideoById');
@@ -2022,8 +2023,8 @@ async function syncPlayerFromRoomState(state) {
   window.hidePlaylistEndedOverlay();
   if (!state) { console.log('[SYNC] No state'); return; }
 
-  let videoId     = state?.currentVideoId || null;
-  const isPlaying   = !!state?.isPlaying;
+  let videoId = state?.currentVideoId || null;
+  const isPlaying = !!state?.isPlaying;
   const currentTime = Number.isFinite(state?.currentTime) ? state.currentTime : 0;
 
   // SAFEGUARD: fallback to playlist[0] if currentVideoId is null
@@ -2078,7 +2079,7 @@ async function syncPlayerFromRoomState(state) {
 
     // 4. Cập nhật state & UI
     room.currentVideoId = videoId;
-    room.isPlaying     = isPlaying;
+    room.isPlaying = isPlaying;
     room.trackVersion = typeof state?.trackVersion === 'number' ? state.trackVersion : room.trackVersion;
     room.currentTrackIndex = Number.isInteger(state?.currentTrackIndex) ? state.currentTrackIndex : -1;
 
@@ -2112,11 +2113,11 @@ async function syncVideoState(state) {
   window.hidePlaylistEndedOverlay();
   if (!state || typeof state !== 'object') { console.log('[VIDEO_SYNC] Invalid'); return; }
 
-  const videoId     = state?.currentVideoId || null;
-  const isPlaying   = !!state?.isPlaying;
+  const videoId = state?.currentVideoId || null;
+  const isPlaying = !!state?.isPlaying;
   const currentTime = Number.isFinite(state?.currentTime) ? state.currentTime : 0;
-  const actionId    = state?.lastActionId || 0;
-  const actionType  = state?.actionType || 'heartbeat';
+  const actionId = state?.lastActionId || 0;
+  const actionType = state?.actionType || 'heartbeat';
   const actorSocketId = state?.actorSocketId || null;
 
   console.log(`[VIDEO_SYNC] video=${videoId} play=${isPlaying} actionId=${actionId} type=${actionType}`);
@@ -2210,9 +2211,9 @@ async function syncVideoState(state) {
 
     // ── Drift Correction (chỉ khi đang playing và KHÔNG có hard lock) ───
     if (isPlaying && now >= _hardSyncLockUntil) {
-      const smallDrift  = cfg.SMALL_DRIFT_THRESHOLD  || 5;
+      const smallDrift = cfg.SMALL_DRIFT_THRESHOLD || 5;
       const mediumDrift = cfg.MEDIUM_DRIFT_THRESHOLD || 15;
-      const largeDrift  = cfg.LARGE_DRIFT_THRESHOLD  || 20;
+      const largeDrift = cfg.LARGE_DRIFT_THRESHOLD || 20;
 
       console.log(`[VIDEO_SYNC][DRIFT_CHECK] drift=${drift.toFixed(1)}s small=<${smallDrift}s medium=${smallDrift}-${mediumDrift}s large=>${largeDrift}s`);
 
@@ -2364,7 +2365,7 @@ function _applySoftCorrection(targetTime, localTime) {
   }, cfg.SOFT_CORRECT_DURATION);
 
   // Show UI notice
-  _showSyncNotice('đang đồng bộ...');
+  _showSyncNotice('đang đồng bộ');
   return true;
 }
 
@@ -2398,7 +2399,7 @@ function _applyHardSeek(targetTime, localTime) {
   }
 
   // Show notice trước khi seek
-  _showSyncNotice('đang đồng bộ lại...');
+  _showSyncNotice('đang đồng bộ lại');
 
   // Hard seek
   p.seekTo?.(targetTime, true);
@@ -2461,11 +2462,11 @@ async function handleTrackChanged(payload) {
   window.hidePlaylistEndedOverlay();
   if (!payload || typeof payload !== 'object') { console.log('[TRACK_CHANGE] Invalid'); return; }
 
-  const videoId     = payload?.currentVideoId || null;
-  const isPlaying   = !!payload?.isPlaying;
+  const videoId = payload?.currentVideoId || null;
+  const isPlaying = !!payload?.isPlaying;
   const currentTime = Number.isFinite(payload?.currentTime) ? payload.currentTime : 0;
-  const version     = typeof payload?.trackVersion === 'number' ? payload.trackVersion : -1;
-  const actionId    = payload?.lastActionId || 0;
+  const version = typeof payload?.trackVersion === 'number' ? payload.trackVersion : -1;
+  const actionId = payload?.lastActionId || 0;
   const lastAuthAction = payload?.lastAuthoritativeAction || null;
 
   console.log(`[TRACK_CHANGE] video=${videoId} play=${isPlaying} v=${version} actionId=${actionId}`);
@@ -2488,9 +2489,10 @@ async function handleTrackChanged(payload) {
 
   try {
     // Cập nhật state
-    room.trackVersion      = version;
-    room.currentVideoId   = videoId;
-    room.isPlaying        = isPlaying;
+    room.trackVersion = version;
+    room.currentVideoId = videoId;
+    room.isPlaying = isPlaying;
+    room.isIdle = false;
     room.currentTrackIndex = Number.isInteger(payload?.currentTrackIndex) ? payload.currentTrackIndex : -1;
 
     // Update authoritative action tracking
@@ -2854,7 +2856,7 @@ function setupSocket() {
     //  2. hostToken_{roomId}       → existing stored host token (reconnect)
     //  3. mm_joinPw_{roomId}       → guest join password (from Hub join modal)
     let joinPassword = '';
-    let hostToken    = '';
+    let hostToken = '';
 
     // 1. Check for freshly-created room state (host auto-join path)
     try {
@@ -2886,12 +2888,12 @@ function setupSocket() {
     // 4. Load full profile from mm_profile (synchronous — set by Room Hub)
     const profile = getLocalProfile();
     const joinAvatar = profile?.avatar || localStorage.getItem('mm_guest_avatar') || '';
-    const joinName   = profile?.nickname || room.myName || 'Guest';
+    const joinName = profile?.nickname || room.myName || 'Guest';
 
     // CRITICAL DEBUG: trace what's being sent to server
     console.group('[SOCKET][JOIN-EMIT]');
     console.log('  room.id used:', room.id);
-    console.log('  hostToken found:', !!hostToken, hostToken ? hostToken.substring(0,8)+'...' : null);
+    console.log('  hostToken found:', !!hostToken, hostToken ? hostToken.substring(0, 8) + '...' : null);
     console.log('  joinPassword found:', !!joinPassword);
     console.log('  joinAvatar found:', !!joinAvatar);
     console.log('  joinName:', joinName);
@@ -2943,7 +2945,9 @@ function setupSocket() {
   });
 
   s.on('playlist-ended', payload => {
-    console.log('[ROOM][PLAYLIST_ENDED]', payload);
+    console.log('[PLAYLIST_ENDED][RECEIVED]', payload);
+    
+    // HIGH PRIORITY EVENT: Force apply without stale action checks
     room.currentVideoId = null;
     room.isPlaying = false;
     room.isIdle = true;
@@ -2952,23 +2956,24 @@ function setupSocket() {
       room.ytPlayer?.stopVideo?.();
     } catch {}
 
+    console.log('[PLAYLIST_ENDED][SHOW_OVERLAY]');
     window.showPlaylistEndedOverlay?.();
   });
 
   s.on('joined-room', (payload) => {
     window.hidePlaylistEndedOverlay();
     // Destructure với fallback an toàn
-    const roomId          = payload?.roomId          || null;
-    const roomName        = payload?.roomName        || 'Midnight Room';
-    const isHost          = !!payload?.isHost;
-    const hostId          = payload?.hostId          || null;
-    const state           = payload?.state           || {};
-    const playlist        = _skipPlaylistOnJoinedRoom ? room.playlist : (payload?.playlist || []);
-    const members         = payload?.members         || [];
-    const serverTime      = payload?.serverTime      || Date.now();
-    const controllerIds   = payload?.controllerIds   || [];
-    const myProfile      = payload?.myProfile       || null;
-    const isIdle         = !!payload?.isIdle;
+    const roomId = payload?.roomId || null;
+    const roomName = payload?.roomName || 'Midnight Room';
+    const isHost = !!payload?.isHost;
+    const hostId = payload?.hostId || null;
+    const state = payload?.state || {};
+    const playlist = _skipPlaylistOnJoinedRoom ? room.playlist : (payload?.playlist || []);
+    const members = payload?.members || [];
+    const serverTime = payload?.serverTime || Date.now();
+    const controllerIds = payload?.controllerIds || [];
+    const myProfile = payload?.myProfile || null;
+    const isIdle = !!payload?.isIdle;
 
     console.log(`[SOCKET][JOINED-ROOM] roomId=${roomId} roomName=${roomName} isHost=${isHost} hostId=${hostId} memberCount=${members.length} playlistSkipped=${_skipPlaylistOnJoinedRoom} isIdle=${isIdle}`);
     console.log(`[ROOM_STATE_RECEIVED] videoId=${state?.currentVideoId} playing=${state?.isPlaying} time=${state?.currentTime} version=${state?.trackVersion} playlistLen=${playlist.length}`);
@@ -2977,7 +2982,7 @@ function setupSocket() {
     // ── Authoritative self-profile: always use server-confirmed profile ──
     // This overrides any locally-cached value and ensures the user always sees their own avatar/name.
     if (myProfile) {
-      room.myName   = myProfile.name   || room.myName;
+      room.myName = myProfile.name || room.myName;
       room.myAvatar = myProfile.avatar || room.myAvatar;
       // Persist so reconnect / F5 work without needing mm_profile
       localStorage.setItem('mm_room_username', room.myName);
@@ -2989,15 +2994,15 @@ function setupSocket() {
     // Each step is wrapped individually so a render/UI crash does not kill state sync.
     try {
       // Cập nhật room state
-      room.roomName          = roomName;
-      room.playlist          = playlist;
-      room.members           = members;
-      room.isHost            = isHost;
-      room.hostId            = hostId;
-      room.trackVersion      = typeof state?.trackVersion === 'number' ? state.trackVersion : 0;
+      room.roomName = roomName;
+      room.playlist = playlist;
+      room.members = members;
+      room.isHost = isHost;
+      room.hostId = hostId;
+      room.trackVersion = typeof state?.trackVersion === 'number' ? state.trackVersion : 0;
       room.currentTrackIndex = Number.isInteger(state?.currentTrackIndex) ? state.currentTrackIndex : -1;
-      room.currentMood       = state?.mood || 'chill';
-      room.isIdle            = isIdle;
+      room.currentMood = state?.mood || 'chill';
+      room.isIdle = isIdle;
 
       // Khởi tạo controller state
       _controllerIds = controllerIds;
@@ -3019,9 +3024,9 @@ function setupSocket() {
 
     // Cập nhật UI
     try {
-      if (el.roomIdDisplay)      el.roomIdDisplay.textContent      = roomId;
-      if (el.roomNameDisplay)    el.roomNameDisplay.textContent    = room.roomName;
-      if (el.memberCountNum)    el.memberCountNum.textContent     = room.members.length;
+      if (el.roomIdDisplay) el.roomIdDisplay.textContent = roomId;
+      if (el.roomNameDisplay) el.roomNameDisplay.textContent = room.roomName;
+      if (el.memberCountNum) el.memberCountNum.textContent = room.members.length;
     } catch (e) { console.error('[HYDRATE][UI]', e); }
 
     try { renderQueue(); } catch (e) { console.error('[HYDRATE][QUEUE]', e); }
@@ -3029,7 +3034,7 @@ function setupSocket() {
 
     // Load video nếu có
     let currentVideoId = state?.currentVideoId || null;
-    
+
     // SAFEGUARD: fallback if currentVideoId is null but playlist has items
     if (!currentVideoId && playlist && playlist.length > 0) {
       currentVideoId = playlist[0].id;
@@ -3046,7 +3051,7 @@ function setupSocket() {
     }
 
     // Show idle UI if room is already idle on join
-    if (room.isIdle || (room.playlist.length === 0 && !currentVideoId)) {
+    if (room.isIdle) {
       try { window.showPlaylistEndedOverlay?.(); } catch (e) { console.error('[HYDRATE][IDLE_UI]', e); }
     }
     // Welcome message
@@ -3128,7 +3133,7 @@ function setupSocket() {
       if (isPlaying !== ytPlaying) {
         console.log(`[SYNC][RECOVERY_PLAY_STATE] isPlaying=${isPlaying} ytPlaying=${ytPlaying}`);
         if (isPlaying) {
-          safeAutoplay(p).catch(() => {});
+          safeAutoplay(p).catch(() => { });
         } else {
           p.pauseVideo?.();
         }
@@ -3145,7 +3150,7 @@ function setupSocket() {
       console.log(`[SYNC][OVERLAY_RESYNC] forceHardSync → seek ${targetTime.toFixed(1)}s play=${state.isPlaying}`);
       p.seekTo(targetTime, true);
       if (state.isPlaying) {
-        safeAutoplay(p).catch(() => {});
+        safeAutoplay(p).catch(() => { });
       } else {
         p.pauseVideo?.();
       }
@@ -3159,7 +3164,7 @@ function setupSocket() {
     if (isPlaying !== ytPlaying) {
       console.log(`[SYNC][PLAY_STATE] isPlaying=${isPlaying} ytPlaying=${ytPlaying}`);
       if (isPlaying) {
-        safeAutoplay(p).catch(() => {});
+        safeAutoplay(p).catch(() => { });
       } else {
         p.pauseVideo?.();
       }
@@ -3181,9 +3186,9 @@ function setupSocket() {
     // ── Drift Check ────────────────────────────────────────────
     const drift = localTime - serverTime;
     const driftAbs = Math.abs(drift);
-    const smallDrift  = cfg.SMALL_DRIFT_THRESHOLD  || 5;
+    const smallDrift = cfg.SMALL_DRIFT_THRESHOLD || 5;
     const mediumDrift = cfg.MEDIUM_DRIFT_THRESHOLD || 20;
-    const largeDrift  = cfg.LARGE_DRIFT_THRESHOLD  || 20;
+    const largeDrift = cfg.LARGE_DRIFT_THRESHOLD || 20;
 
     console.log(`[SYNC][DRIFT] guest=${localTime.toFixed(1)}s host=${serverTime.toFixed(1)}s drift=${driftAbs.toFixed(1)}s mobile=${IS_MOBILE}`);
 
@@ -3255,7 +3260,7 @@ function setupSocket() {
     handleRoomIdle(payload);
   });
 
-  s.on('playlist-updated',  list  => {
+  s.on('playlist-updated', list => {
     if (!list) return;
     console.log(`[SOCKET][PLAYLIST-UPDATED] incomingLength=${list.length} localLength=${room.playlist.length} incomingIds=${list.map(v => v.id).join(',')}`);
     // Server is authoritative — always replace. Remove makes list shorter, add makes it longer.
@@ -3287,7 +3292,7 @@ function setupSocket() {
     addChatLine(data.senderId, data.name, data.text, data.timestamp, data.avatar);
   });
 
-  s.on('member-joined',     ({ id, name, avatar, clientId }) => {
+  s.on('member-joined', ({ id, name, avatar, clientId }) => {
     console.log(`[SOCKET][MEMBER-JOINED] socket=${id} name=${name} avatar=${avatar} clientId=${clientId}`);
     // Prevent duplicate: same socket.id should not appear twice
     if (room.members.some(m => m.id === id)) {
@@ -3330,21 +3335,21 @@ function setupSocket() {
     try { renderMemberList(); } catch (e) { console.error('[HYDRATE][MEMBERS]', e); }
     try { updateControlUI(); } catch (e) { console.error('[HYDRATE][CONTROL]', e); }
   });
-  
+
   // Host disconnected and grace period expired - new host promoted
   s.on('host-changed', ({ newHostId, newHostName, newHostToken, resetControllers }) => {
     console.log(`[SOCKET][HOST-CHANGED] newHost=${newHostId}(${newHostName}) resetControllers=${resetControllers}`);
-    
+
     const isNewHost = newHostId === room.socket?.id;
-    
+
     room.hostId = newHostId;
     room.isHost = isNewHost;
-    
+
     // Always reset controller list when host changes
     if (resetControllers) {
       _controllerIds = [];
     }
-    
+
     if (isNewHost) {
       // We are the new host - save the new token
       sessionStorage.setItem(`hostToken_${room.id}`, newHostToken);
@@ -3355,7 +3360,7 @@ function setupSocket() {
       // Clear our host token if we were the old host
       sessionStorage.removeItem(`hostToken_${room.id}`);
     }
-    
+
     // Update UI
     try { updateHostUI(); } catch (e) { console.error('[HYDRATE][HOST_UI]', e); }
     try { updateControlUI(); } catch (e) { console.error('[HYDRATE][CONTROL]', e); }
@@ -3368,17 +3373,17 @@ function setupSocket() {
     // Update in members array
     const member = room.members.find(m => m.id === id);
     if (member) {
-      if (name)   member.name   = name;
+      if (name) member.name = name;
       if (avatar) member.avatar = avatar;
     }
 
     // If it's the current user, persist and sync state
     if (id === room.socket?.id) {
-      room.myName   = name   || room.myName;
+      room.myName = name || room.myName;
       room.myAvatar = avatar || room.myAvatar;
       localStorage.setItem('mm_room_username', room.myName);
       localStorage.setItem('mm_guest_avatar', room.myAvatar || '');
-      try { localStorage.setItem('mm_profile', JSON.stringify({ nickname: room.myName, avatar: room.myAvatar })); } catch (_) {}
+      try { localStorage.setItem('mm_profile', JSON.stringify({ nickname: room.myName, avatar: room.myAvatar })); } catch (_) { }
     }
 
     try { renderMemberList(); } catch (e) { console.error('[HYDRATE][PROFILE]', e); }
@@ -3389,9 +3394,9 @@ function setupSocket() {
     notify(msg);
     // Critical join/room errors → redirect back to RoomHub
     if (msg.includes('không tìm thấy') || msg.includes('not found') ||
-        msg.includes('mật khẩu sai') || msg.includes('wrong password') ||
-        msg.includes('phòng không') || msg.includes('room not') ||
-        msg.includes('đã hết') || msg.includes('expired')) {
+      msg.includes('mật khẩu sai') || msg.includes('wrong password') ||
+      msg.includes('phòng không') || msg.includes('room not') ||
+      msg.includes('đã hết') || msg.includes('expired')) {
       showRoomDeadMessage('Phòng không tồn tại hoặc đã đóng.');
     }
   });
@@ -3409,18 +3414,18 @@ function setupSocket() {
     if (_toastTimer) { clearTimeout(_toastTimer); _toastTimer = null; }
 
     const msgs = {
-      host:              '🚪 Host đã đóng phòng.',
+      host: '🚪 Host đã đóng phòng.',
       host_disconnected: '🚪 Host đã rời phòng — phòng đã đóng.',
-      inactivity:        '⏰ Phòng tự đóng do không hoạt động.',
-      no_online_host:   '⏰ Không có host trực tuyến — phòng đã đóng.',
-      empty:            '🚪 Phòng trống — phòng đã đóng.',
+      inactivity: '⏰ Phòng tự đóng do không hoạt động.',
+      no_online_host: '⏰ Không có host trực tuyến — phòng đã đóng.',
+      empty: '🚪 Phòng trống — phòng đã đóng.',
     };
     const msg = msgs[reason] || 'Phòng đã đóng.';
 
     // Stop player
-    try { room.ytPlayer?.stopVideo?.(); } catch (_) {}
+    try { room.ytPlayer?.stopVideo?.(); } catch (_) { }
     room.currentVideoId = null;
-    room.isPlaying      = false;
+    room.isPlaying = false;
 
     // Use the room dead message helper which handles all cleanup and redirect
     showRoomDeadMessage(msg);
@@ -3464,21 +3469,21 @@ let _confirmResolve = null;
 
 function openConfirmModal({ type, title, description, confirmText, cancelText, onConfirm }) {
   const backdrop = document.getElementById('confirm-backdrop');
-  const modal   = document.getElementById('confirm-modal');
+  const modal = document.getElementById('confirm-modal');
   if (!backdrop || !modal) return;
 
   document.getElementById('confirm-title').textContent = title;
   document.getElementById('confirm-desc').textContent = description;
 
   const confirmBtn = document.getElementById('confirm-confirm');
-  const cancelBtn  = document.getElementById('confirm-cancel');
+  const cancelBtn = document.getElementById('confirm-cancel');
 
   // Set button text + style
   confirmBtn.textContent = confirmText || 'Xác nhận';
-  confirmBtn.className  = 'confirm-btn danger' + (type === 'leave' ? ' leave' : '');
+  confirmBtn.className = 'confirm-btn danger' + (type === 'leave' ? ' leave' : '');
 
-  cancelBtn.textContent  = cancelText || 'Hủy';
-  cancelBtn.className    = 'confirm-btn cancel';
+  cancelBtn.textContent = cancelText || 'Hủy';
+  cancelBtn.className = 'confirm-btn cancel';
 
   // Dismiss helper
   const dismiss = () => {
@@ -3500,7 +3505,7 @@ function openConfirmModal({ type, title, description, confirmText, cancelText, o
   confirmBtn.replaceWith(confirmBtn.cloneNode(true));
   cancelBtn.replaceWith(cancelBtn.cloneNode(true));
   const newConfirmBtn = document.getElementById('confirm-confirm');
-  const newCancelBtn  = document.getElementById('confirm-cancel');
+  const newCancelBtn = document.getElementById('confirm-cancel');
 
   newConfirmBtn.addEventListener('click', () => {
     dismiss();
@@ -3545,10 +3550,10 @@ function boot() {
   //   3. URL pathname     (Tier 3) — Refresh/deep-link fallback: replaceState cleared ?join=, session cleared
   //      Use mm_active_room as the session marker to confirm this was a valid room session.
   // If NONE available → redirect to RoomHub (absolute URL).
-  const pendingRoom  = sessionStorage.getItem('mm_pending_room') || '';
-  const activeRoom   = sessionStorage.getItem('mm_active_room')  || '';
-  const urlParams    = new URLSearchParams(window.location.search);
-  const urlJoinId    = urlParams.get('join') || '';
+  const pendingRoom = sessionStorage.getItem('mm_pending_room') || '';
+  const activeRoom = sessionStorage.getItem('mm_active_room') || '';
+  const urlParams = new URLSearchParams(window.location.search);
+  const urlJoinId = urlParams.get('join') || '';
 
   // Tier 3: Extract roomId from /r/:id in URL pathname
   // Covers: F5 after replaceState cleared ?join=, deep-link where ?join= was stripped, etc.
@@ -3564,8 +3569,8 @@ function boot() {
   console.group('[BOOT] Session Validation');
   console.log('  pathname:', pathname);
   console.log('  mm_pending_room:', pendingRoom || '(missing)');
-  console.log('  mm_active_room:', activeRoom  || '(missing)');
-  console.log('  ?join= from URL:', urlJoinId  || '(none)');
+  console.log('  mm_active_room:', activeRoom || '(missing)');
+  console.log('  ?join= from URL:', urlJoinId || '(none)');
   console.log('  /r/ from pathname:', pathnameRoomId || '(none)');
 
   // Resolve in priority order
@@ -3648,7 +3653,7 @@ function boot() {
           sessionStorage.removeItem('mm_pending_room');
           sessionStorage.removeItem('mm_createState_' + room.id);
           sessionStorage.removeItem('hostToken_' + room.id);
-        } catch (_) {}
+        } catch (_) { }
 
         // Clear all timers
         if (_forceSourceLoadTimer) { clearTimeout(_forceSourceLoadTimer); _forceSourceLoadTimer = null; }
@@ -3667,13 +3672,13 @@ function boot() {
     });
   });
   setupSocket();
-  
+
   // Setup sync overlay
   document.getElementById('sync-play-btn')?.addEventListener('click', () => {
     document.getElementById('sync-overlay')?.classList.add('hidden');
     room.ytPlayer?.playVideo?.();
   });
-  
+
   if (!IS_MOBILE && typeof effects !== 'undefined') effects.resumeAll();
   if (!IS_MOBILE && typeof initStars === 'function') initStars();
   if (!IS_MOBILE && typeof effects !== 'undefined') effects.start('stars');
