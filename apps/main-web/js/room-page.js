@@ -1243,11 +1243,7 @@ window.hidePlaylistEndedOverlay = function() {
 };
 
 window.showPlaylistEndedOverlay = function() {
-  if (
-     room?.playlist?.length > 0
-     || room?.currentVideoId
-     || room?.isPlaying
-  ) {
+  if (room?.currentVideoId || room?.isPlaying) {
      return;
   }
 
