@@ -17,6 +17,8 @@ function setSoundCloudMode(active){
 let scGlobalListenersAdded = false;
 let scLastPlayAttemptAt = 0;
 let scPendingAutoplayTimer = null;
+let scLastFinishedTrackId = null;
+let scLastFinishAt = 0;
 
 function setPendingAutoplay(value) {
   state.soundcloud.pendingAutoplay = value;
@@ -57,6 +59,13 @@ async function attemptSoundCloudResume(reason) {
       setPendingAutoplay(false);
       return;
     }
+    
+    // Pause other audio sources to prevent duplicate audio
+    try {
+      if ($.audio) $.audio.pause();
+      document.querySelectorAll('video, audio').forEach(el => el.pause());
+      if (window.room && room.ytPlayer) room.ytPlayer.pauseVideo?.();
+    } catch(e) {}
     
     console.log(`[SC][PLAY_ATTEMPT] reason=${reason}`);
     widget.play();
@@ -261,6 +270,14 @@ async function playSoundCloud(urlArg, options = {}){
       
       console.log('[SC][LOAD_NEXT]', url);
       setPendingAutoplay(true);
+      
+      // Unbind old handlers before load to prevent leaks
+      try {
+        widget.unbind(SC.Widget.Events.READY);
+        widget.unbind(SC.Widget.Events.PLAY);
+        widget.unbind(SC.Widget.Events.ERROR);
+        widget.unbind(SC.Widget.Events.FINISH);
+      } catch(e) {}
 
       widget.load(url, {
         auto_play: false, // We'll manually play it to track success/failure
@@ -298,6 +315,15 @@ async function playSoundCloud(urlArg, options = {}){
   // --- DESTROY/RESET PLAYER CŨ TRƯỚC KHI LOAD MỚI (Dành cho play manual) ---
   const oldIframes = $.soundcloudPlayer.querySelectorAll('iframe');
   oldIframes.forEach(ifr => {
+    if (typeof SC !== 'undefined' && SC.Widget) {
+      try {
+        const oldWidget = SC.Widget(ifr);
+        oldWidget.unbind(SC.Widget.Events.READY);
+        oldWidget.unbind(SC.Widget.Events.PLAY);
+        oldWidget.unbind(SC.Widget.Events.ERROR);
+        oldWidget.unbind(SC.Widget.Events.FINISH);
+      } catch(e) {}
+    }
     ifr.src = 'about:blank';
     ifr.remove();
   });
@@ -375,6 +401,14 @@ async function playSoundCloud(urlArg, options = {}){
     widget.bind(SC.Widget.Events.FINISH, () => {
       console.log('[SC][FINISH]');
       
+      const now = Date.now();
+      if (scLastFinishedTrackId === url && now - scLastFinishAt < 2000) {
+         console.log('[SC][FINISH] Duplicate ignored');
+         return;
+      }
+      scLastFinishedTrackId = url;
+      scLastFinishAt = now;
+      
       if (_isHandlingTrackEnd) {
          console.log('[SC][FINISH] Ignored - already handling track end');
          return;
@@ -409,11 +443,15 @@ async function playSoundCloud(urlArg, options = {}){
     }
   },8000);
 
-  // --- MOBILE PANEL AUTO-CLOSE ---
+  // --- MOBILE PANEL AUTO-CLOSE & OPTIMIZATION ---
   // Đóng panel trên thiết bị di động ngay lập tức để trình duyệt nhận diện iframe hiển thị và cho phép autoplay
   if (typeof isMobileView === 'function' && isMobileView()) {
     if (typeof closePanel === 'function') {
       closePanel('music-panel');
+    }
+    // Giảm animation nền trên mobile
+    if (window.effects && typeof effects.suspendAll === 'function') {
+      effects.suspendAll();
     }
   }
 
