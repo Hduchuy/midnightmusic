@@ -7,9 +7,13 @@
 /* App luôn hiện */
 #app { opacity: 1 !important; pointer-events: auto !important; }
 
-/* ── Idle overlay — glass card shown when playlist exhausted ── */
-.idle-overlay {
-  display: none;
+/* ── Playlist Ended Overlay ── */
+.playlist-ended-overlay {
+  display: flex; /* Always flex to allow transition, hidden by visibility */
+  opacity: 0;
+  pointer-events: none;
+  visibility: hidden;
+  transform: scale(0.98);
   position: absolute;
   inset: 0;
   z-index: 30;
@@ -19,11 +23,14 @@
   border-radius: 20px;
   align-items: center;
   justify-content: center;
+  transition: opacity .35s ease, transform .35s ease, visibility .35s;
 }
 
-.idle-overlay.visible {
-  display: flex;
-  animation: idleFadeIn 0.4s ease;
+.playlist-ended-overlay.show {
+  opacity: 1;
+  pointer-events: auto;
+  visibility: visible;
+  transform: scale(1);
 }
 
 @keyframes idleFadeIn {
@@ -328,6 +335,13 @@ body.yt-iframe-mode #youtube-player {
   display: flex; align-items: center; justify-content: center;
 }
 .react-btn:hover { transform: translateY(-4px) scale(1.12); background: rgba(255,255,255,.14); }
+
+/* Hide reactions on mobile to reduce lag */
+@media (max-width: 768px) {
+  .reactions-row {
+    display: none !important;
+  }
+}
 
 /* ── RIGHT: Playlist Panel ── */
 .room-right {
@@ -1832,5 +1846,33 @@ body.yt-iframe-mode #youtube-player {
   .confirm-btn {
     height: 44px;
     font-size: 0.85rem;
+  }
+}
+
+/* ── Static Chat Tip ── */
+.room-chat-tip {
+  margin: 14px 14px 4px;
+  padding: 10px 14px;
+  background: rgba(156, 183, 255, 0.04);
+  border: 1px solid rgba(156, 183, 255, 0.08);
+  border-radius: 14px;
+  backdrop-filter: blur(8px);
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 0.76rem;
+  line-height: 1.45;
+  text-align: center;
+  transition: opacity 0.25s ease, background 0.25s ease, border-color 0.25s ease;
+  flex-shrink: 0;
+}
+.room-chat-tip:hover {
+  background: rgba(156, 183, 255, 0.08);
+  border-color: rgba(156, 183, 255, 0.15);
+  opacity: 0.9;
+}
+@media (max-width: 480px) {
+  .room-chat-tip {
+    margin: 12px 10px 4px;
+    padding: 8px 12px;
+    font-size: 0.72rem;
   }
 }
