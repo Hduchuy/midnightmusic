@@ -1874,7 +1874,8 @@ body.yt-iframe-mode #youtube-player {
 /* ── Static Chat Tip ── */
 .room-chat-tip {
   margin: 14px 14px 4px;
-  padding: 10px 14px;
+  padding: 16px;
+  box-sizing: border-box;
   background: rgba(156, 183, 255, 0.04);
   border: 1px solid rgba(156, 183, 255, 0.08);
   border-radius: 14px;
@@ -1882,12 +1883,25 @@ body.yt-iframe-mode #youtube-player {
   -webkit-backdrop-filter: blur(8px);
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.76rem;
-  line-height: 1.45;
-  text-align: center;
   transition: opacity 0.25s ease, background 0.25s ease, border-color 0.25s ease;
   flex-shrink: 0;
   isolation: isolate;
   transform: translateZ(0);
+
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.room-chat-tip-icon {
+  flex-shrink: 0;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+.room-chat-tip-text {
+  line-height: 1.5;
+  min-width: 0;
+  margin: 0;
+  text-align: left;
 }
 .room-chat-tip:hover {
   background: rgba(156, 183, 255, 0.08);
@@ -1897,7 +1911,7 @@ body.yt-iframe-mode #youtube-player {
 @media (max-width: 480px) {
   .room-chat-tip {
     margin: 12px 10px 4px;
-    padding: 8px 12px;
+    padding: 16px !important;
     font-size: 0.72rem;
   }
 }
