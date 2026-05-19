@@ -1892,16 +1892,45 @@ body.yt-iframe-mode #youtube-player {
   align-items: flex-start;
   gap: 8px;
 }
-.room-chat-tip-icon {
-  flex-shrink: 0;
-  font-size: 0.9rem;
-  line-height: 1.5;
-}
+
+.room-chat-tip,
 .room-chat-tip-text {
-  line-height: 1.5;
+  font-family:
+    "Inter",
+    "Segoe UI",
+    Roboto,
+    Arial,
+    sans-serif;
+
+  font-weight: 600;
+  line-height: 1.45;
+  letter-spacing: 0;
+
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  font-synthesis: none;
+}
+
+.room-chat-tip-text {
+  flex: 1;
   min-width: 0;
+
+  word-break: keep-all;
+  overflow-wrap: break-word;
+
   margin: 0;
   text-align: left;
+}
+
+.room-chat-tip-icon {
+  width: 18px;
+  flex-shrink: 0;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  margin-top: 2px;
 }
 .room-chat-tip:hover {
   background: rgba(156, 183, 255, 0.08);
