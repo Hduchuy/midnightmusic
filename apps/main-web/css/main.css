@@ -1031,6 +1031,7 @@ body.focus-mode #focus-time {
   background:var(--panel-surface);
   border-left:1px solid var(--panel-border);
   backdrop-filter:blur(24px);
+  -webkit-backdrop-filter:blur(24px);
   z-index:100;
   transition:.4s;
   padding:1.5rem;
@@ -1038,6 +1039,8 @@ body.focus-mode #focus-time {
   overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;
   color:var(--panel-text);
+  isolation: isolate;
+  transform: translateZ(0);
 }
 
 
@@ -1170,6 +1173,7 @@ input:-webkit-autofill:active {
 }
 #focus-min[type=number] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .focus-presets {
@@ -1406,12 +1410,9 @@ input:-webkit-autofill:active {
   opacity:0;
   pointer-events:none;
   border-radius:20px;
-  border:1px solid var(--panel-border);
   background:
     linear-gradient(145deg,rgba(255,255,255,.14),rgba(255,255,255,.06)),
     rgba(10,18,32,.5);
-  backdrop-filter:blur(20px) saturate(135%);
-  -webkit-backdrop-filter:blur(20px) saturate(135%);
   box-shadow:
     0 14px 36px rgba(0,0,0,.26),
     0 0 18px rgba(130,170,255,.14);
@@ -1420,6 +1421,19 @@ input:-webkit-autofill:active {
   max-height:0;
   overflow:hidden;
   transition:opacity .28s ease, transform .28s ease, max-height .28s ease;
+  isolation: isolate;
+}
+
+#soundcloud-stage::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:inherit;
+  border:1px solid var(--panel-border);
+  backdrop-filter:blur(20px) saturate(135%);
+  -webkit-backdrop-filter:blur(20px) saturate(135%);
+  pointer-events:none;
+  z-index:-1;
 }
 
 

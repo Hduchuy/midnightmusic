@@ -355,12 +355,24 @@ body.yt-iframe-mode #youtube-player {
   flex: 1; display: flex; flex-direction: column;
   border-radius: 20px;
   background: rgba(8,10,24,.52);
-  border: 1px solid rgba(255,255,255,.1);
-  backdrop-filter: blur(28px) saturate(150%);
   box-shadow: 0 16px 48px rgba(0,0,0,.38);
   /* Fixed height: prevents panel resize on tab switch */
   height: 100%;
   overflow: hidden; min-height: 0;
+  position: relative;
+  isolation: isolate;
+}
+
+.playlist-panel::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid rgba(255,255,255,.1);
+  backdrop-filter: blur(28px) saturate(150%);
+  -webkit-backdrop-filter: blur(28px) saturate(150%);
+  pointer-events: none;
+  z-index: -1;
 }
 
 /* Tabs — 3-tab layout */
@@ -570,6 +582,7 @@ body.yt-iframe-mode #youtube-player {
 .yt-result-title {
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   font-size: .76rem;
@@ -884,7 +897,10 @@ body.yt-iframe-mode #youtube-player {
   color: rgba(255,255,255,0.92);
   background: rgba(255,255,255,0.08);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border: 1px solid rgba(255,255,255,0.06);
+  isolation: isolate;
+  transform: translateZ(0);
 }
 
 .chat-message-mine .chat-bubble {
@@ -959,9 +975,12 @@ body.yt-iframe-mode #youtube-player {
   background: rgba(156,183,255,.07);
   border: 1px solid rgba(156,183,255,.18);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   flex-shrink: 0;
   animation: npbFadeIn .3s ease;
   transition: opacity .25s, transform .25s;
+  isolation: isolate;
+  transform: translateZ(0);
 }
 
 @keyframes npbFadeIn {
@@ -1242,10 +1261,12 @@ body.yt-iframe-mode #youtube-player {
   }
 
   /* Simplified UI for tier-low (handled via body class) */
-  body.tier-low .playlist-panel,
+  body.tier-low .playlist-panel::before,
   body.tier-low .now-playing-bar,
   body.tier-low .chat-message-other .chat-bubble {
     backdrop-filter: none !important;
+  }
+  body.tier-low .playlist-panel {
     background: rgba(15, 20, 35, 0.95) !important;
   }
   
@@ -1254,9 +1275,11 @@ body.yt-iframe-mode #youtube-player {
   }
 
   /* FPS-Safe Mode (auto-triggered) */
-  body.fps-safe-mode .playlist-panel,
+  body.fps-safe-mode .playlist-panel::before,
   body.fps-safe-mode .now-playing-bar {
     backdrop-filter: none !important;
+  }
+  body.fps-safe-mode .playlist-panel {
     background: rgba(10, 12, 20, 0.98) !important;
     box-shadow: none !important;
   }
@@ -1266,8 +1289,10 @@ body.yt-iframe-mode #youtube-player {
     display: none !important;
   }
 
-  .playlist-panel {
+  .playlist-panel::before {
     backdrop-filter: blur(12px) saturate(120%) !important;
+  }
+  .playlist-panel {
     box-shadow: 0 8px 32px rgba(0,0,0,.3) !important;
   }
   
@@ -1289,7 +1314,7 @@ body.yt-iframe-mode #youtube-player {
   .panel-overlay,
   .now-playing-bar,
   .chat-message-other .chat-bubble,
-  .plist-panel {
+  .playlist-panel::before {
     backdrop-filter: blur(4px) !important;
   }
 
@@ -1343,7 +1368,7 @@ body.yt-iframe-mode #youtube-player {
   .side-panel,
   .panel-overlay,
   .now-playing-bar,
-  .plist-panel {
+  .playlist-panel::before {
     backdrop-filter: blur(4px) !important;
   }
 
@@ -1372,10 +1397,6 @@ body.yt-iframe-mode #youtube-player {
   .react-btn { width: 36px; height: 36px; font-size: .95rem; }
   .room-meta-badge { display: none; }
   .plist-chips { padding: 6px 8px 2px; }
-
-  #center.room-layout {
-    /* tighter padding on small phones — scroll-wrap handles bottom space */
-  }
 
   .room-scroll-wrap {
     padding: 6px 8px calc(155px + env(safe-area-inset-bottom, 20px)) 8px !important;
@@ -1747,12 +1768,13 @@ body.yt-iframe-mode #youtube-player {
   align-items: center;
   text-align: center;
   gap: 0;
-  transform: scale(0.94);
+  transform: scale(0.94) translateZ(0);
   transition: transform 0.28s cubic-bezier(0.34, 1.56, 0.64, 1);
+  isolation: isolate;
 }
 
 #confirm-backdrop.open #confirm-modal {
-  transform: scale(1);
+  transform: scale(1) translateZ(0);
 }
 
 .confirm-icon {
@@ -1857,12 +1879,15 @@ body.yt-iframe-mode #youtube-player {
   border: 1px solid rgba(156, 183, 255, 0.08);
   border-radius: 14px;
   backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: rgba(255, 255, 255, 0.6);
   font-size: 0.76rem;
   line-height: 1.45;
   text-align: center;
   transition: opacity 0.25s ease, background 0.25s ease, border-color 0.25s ease;
   flex-shrink: 0;
+  isolation: isolate;
+  transform: translateZ(0);
 }
 .room-chat-tip:hover {
   background: rgba(156, 183, 255, 0.08);

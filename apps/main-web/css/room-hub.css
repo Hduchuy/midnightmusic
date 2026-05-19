@@ -557,6 +557,7 @@ html, body {
   -webkit-backdrop-filter: blur(20px);
 }
 
+.hub-cta-card {
   display: flex;
   align-items: center;
   gap: 1.1rem;
@@ -572,7 +573,8 @@ html, body {
   -webkit-backdrop-filter: blur(20px);
   animation: hubCardIn .5s cubic-bezier(0.16,1,0.3,1) both .2s;
   position: relative;
-  overflow: hidden;
+  overflow: visible;
+  isolation: isolate;
 }
 
 .hub-cta-card::before {
@@ -701,6 +703,8 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  isolation: isolate;
+  transform: translateZ(0);
 }
 
 .hub-form-actions {
